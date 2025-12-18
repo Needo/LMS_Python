@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { UserProgress, LastViewed, ProgressStatus } from '../models/user.model';
+import { UserProgress, LastViewed, ProgressStatus } from '../models/progress.model';
 
 @Injectable({
   providedIn: 'root'

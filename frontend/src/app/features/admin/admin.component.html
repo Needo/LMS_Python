@@ -36,18 +36,20 @@
               <mat-icon>save</mat-icon>
               Save Path
             </button>
-            <button mat-raised-button 
-                    color="accent" 
-                    (click)="scanFolder()" 
-                    [disabled]="isScanning() || !rootPath()">
-              @if (isScanning()) {
+            @if (isScanning()) {
+              <button mat-raised-button color="accent" disabled>
                 <mat-spinner diameter="20"></mat-spinner>
                 Scanning...
-              } @else {
+              </button>
+            } @else {
+              <button mat-raised-button 
+                      color="accent" 
+                      (click)="scanFolder()" 
+                      [disabled]="!rootPath()">
                 <mat-icon>folder_open</mat-icon>
                 Scan Folder
-              }
-            </button>
+              </button>
+            }
           </div>
         </mat-card-content>
       </mat-card>
