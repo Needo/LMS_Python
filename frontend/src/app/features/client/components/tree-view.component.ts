@@ -5,12 +5,12 @@ import { NestedTreeControl } from '@angular/cdk/tree';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { CategoryService } from '../../../../core/services/category.service';
-import { CourseService } from '../../../../core/services/course.service';
-import { FileService } from '../../../../core/services/file.service';
-import { Category } from '../../../../core/models/category.model';
-import { Course } from '../../../../core/models/course.model';
-import { FileNode, FileType } from '../../../../core/models/file.model';
+import { CategoryService } from '../../../core/services/category.service';
+import { CourseService } from '../../../core/services/course.service';
+import { FileService } from '../../../core/services/file.service';
+import { Category } from '../../../core/models/category.model';
+import { Course } from '../../../core/models/course.model';
+import { FileNode, FileType } from '../../../core/models/file.model';
 
 interface TreeNode {
   id: number;

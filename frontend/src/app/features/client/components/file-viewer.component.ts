@@ -3,11 +3,11 @@ import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
-import { FileService } from '../../../../core/services/file.service';
-import { ProgressService } from '../../../../core/services/progress.service';
-import { AuthService } from '../../../../core/services/auth.service';
-import { FileNode, FileType } from '../../../../core/models/file.model';
-import { ProgressStatus } from '../../../../core/models/progress.model';
+import { FileService } from '../../../core/services/file.service';
+import { ProgressService } from '../../../core/services/progress.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { FileNode, FileType } from '../../../core/models/file.model';
+import { ProgressStatus } from '../../../core/models/progress.model';
 
 @Component({
   selector: 'app-file-viewer',

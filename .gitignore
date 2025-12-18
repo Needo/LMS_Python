@@ -26,3 +26,10 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+/.vs
+/backend/app/api/endpoints/__pycache__
+/backend/app/api/__pycache__
+/backend/app/core/__pycache__
+/backend/app/schemas/__pycache__
+/backend/app/services/__pycache__
+/backend/app/__pycache__

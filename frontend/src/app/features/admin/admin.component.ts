@@ -10,9 +10,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
-import { AuthService } from '../../../core/services/auth.service';
-import { ScannerService } from '../../../core/services/scanner.service';
-import { ScanResult } from '../../../core/models/scan.model';
+import { AuthService } from '../../core/services/auth.service';
+import { ScannerService } from '../../core/services/scanner.service';
+import { ScanResult } from '../../core/models/scan.model';
 
 @Component({
   selector: 'app-admin',
@@ -36,7 +36,7 @@ export class AdminComponent implements OnInit {
   rootPath = signal<string>('');
   isScanning = signal(false);
   scanResult = signal<ScanResult | null>(null);
-  currentUser = this.authService.currentUser;
+  currentUser: any;
 
   constructor(
     private authService: AuthService,
@@ -46,6 +46,7 @@ export class AdminComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.currentUser = this.authService.currentUser;
     this.loadRootPath();
   }
 

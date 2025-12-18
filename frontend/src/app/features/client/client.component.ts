@@ -5,12 +5,12 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AuthService } from '../../../core/services/auth.service';
-import { CategoryService } from '../../../core/services/category.service';
-import { CourseService } from '../../../core/services/course.service';
-import { FileService } from '../../../core/services/file.service';
-import { ProgressService } from '../../../core/services/progress.service';
-import { FileNode } from '../../../core/models/file.model';
+import { AuthService } from '../../core/services/auth.service';
+import { CategoryService } from '../../core/services/category.service';
+import { CourseService } from '../../core/services/course.service';
+import { FileService } from '../../core/services/file.service';
+import { ProgressService } from '../../core/services/progress.service';
+import { FileNode } from '../../core/models/file.model';
 import { TreeViewComponent } from './components/tree-view.component';
 import { FileViewerComponent } from './components/file-viewer.component';
 
@@ -30,7 +30,7 @@ import { FileViewerComponent } from './components/file-viewer.component';
   styleUrls: ['./client.component.scss']
 })
 export class ClientComponent implements OnInit {
-  currentUser = this.authService.currentUser;
+  currentUser: any;
   selectedFile = signal<FileNode | null>(null);
   isLoading = signal(false);
   
@@ -47,6 +47,7 @@ export class ClientComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.currentUser = this.authService.currentUser;
     this.loadLastViewed();
   }
 
