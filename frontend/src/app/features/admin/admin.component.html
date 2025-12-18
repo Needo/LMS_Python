@@ -1,0 +1,92 @@
+<div class="full-height">
+  <mat-toolbar class="app-toolbar">
+    <span>LMS Admin Panel</span>
+    <span class="toolbar-spacer"></span>
+    <span class="user-info">{{ currentUser()?.username }}</span>
+    <button mat-button (click)="navigateToClient()">
+      <mat-icon>school</mat-icon>
+      Client View
+    </button>
+    <button mat-button (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      Logout
+    </button>
+  </mat-toolbar>
+
+  <div class="content-container">
+    <div class="admin-content">
+      <mat-card class="settings-card">
+        <mat-card-header>
+          <mat-card-title>Root Folder Settings</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>Configure the root folder containing your learning materials.</p>
+          <p class="hint">The system will automatically scan for Categories (Courses, Books, Novels, Pictures) and any custom folders.</p>
+          
+          <mat-form-field class="full-width">
+            <mat-label>Root Folder Path</mat-label>
+            <input matInput 
+                   [(ngModel)]="rootPath" 
+                   placeholder="e.g., C:\LearningMaterials"
+                   (ngModelChange)="rootPath.set($event)">
+          </mat-form-field>
+
+          <div class="action-buttons">
+            <button mat-raised-button color="primary" (click)="saveRootPath()">
+              <mat-icon>save</mat-icon>
+              Save Path
+            </button>
+            <button mat-raised-button 
+                    color="accent" 
+                    (click)="scanFolder()" 
+                    [disabled]="isScanning() || !rootPath()">
+              @if (isScanning()) {
+                <mat-spinner diameter="20"></mat-spinner>
+                Scanning...
+              } @else {
+                <mat-icon>folder_open</mat-icon>
+                Scan Folder
+              }
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      @if (scanResult()) {
+        <mat-card class="results-card">
+          <mat-card-header>
+            <mat-card-title>Scan Results</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="scan-result">
+              <div class="result-item">
+                <mat-icon class="icon-success">check_circle</mat-icon>
+                <span>Status: {{ scanResult()!.message }}</span>
+              </div>
+              <div class="result-item">
+                <mat-icon>category</mat-icon>
+                <span>Categories Found: {{ scanResult()!.categoriesFound }}</span>
+              </div>
+              <div class="result-item">
+                <mat-icon>school</mat-icon>
+                <span>Courses Found: {{ scanResult()!.coursesFound }}</span>
+              </div>
+              <div class="result-item">
+                <mat-icon>add</mat-icon>
+                <span>Files Added: {{ scanResult()!.filesAdded }}</span>
+              </div>
+              <div class="result-item">
+                <mat-icon>remove</mat-icon>
+                <span>Files Removed: {{ scanResult()!.filesRemoved }}</span>
+              </div>
+              <div class="result-item">
+                <mat-icon>update</mat-icon>
+                <span>Files Updated: {{ scanResult()!.filesUpdated }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+  </div>
+</div>

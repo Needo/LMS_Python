@@ -1,0 +1,44 @@
+.left-panel {
+  min-width: 200px;
+  max-width: 600px;
+  background-color: #fafafa;
+  border-right: 1px solid #e0e0e0;
+}
+
+.right-panel {
+  flex: 1;
+  background-color: white;
+}
+
+.resizer {
+  transition: background-color 0.2s;
+}
+
+.resizer.resizing {
+  background-color: #1976d2 !important;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #999;
+}
+
+.empty-state mat-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+}
+
+.empty-state p {
+  font-size: 16px;
+}
+
+.user-info {
+  margin-right: 16px;
+  font-weight: 500;
+}

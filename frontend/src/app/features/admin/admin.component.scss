@@ -1,0 +1,46 @@
+.admin-content {
+  max-width: 800px;
+  margin: 24px auto;
+  padding: 16px;
+}
+
+.settings-card,
+.results-card {
+  margin-bottom: 24px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.hint {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.user-info {
+  margin-right: 16px;
+  font-weight: 500;
+}
+
+.scan-result {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.result-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.icon-success {
+  color: #4caf50;
+}
+
+mat-icon {
+  vertical-align: middle;
+}

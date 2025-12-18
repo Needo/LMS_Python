@@ -1,0 +1,40 @@
+.tree {
+  padding: 8px;
+}
+
+.mat-tree-node {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.mat-tree-node:hover {
+  background-color: #f5f5f5;
+}
+
+.file-node.selected {
+  background-color: #e3f2fd !important;
+  font-weight: 500;
+}
+
+.node-label {
+  margin-left: 8px;
+  user-select: none;
+}
+
+.nested-nodes {
+  padding-left: 24px;
+}
+
+.tree-invisible {
+  display: none;
+}
+
+mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+}

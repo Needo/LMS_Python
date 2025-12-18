@@ -1,0 +1,43 @@
+<div class="full-height" 
+     (mousemove)="onMouseMove($event)" 
+     (mouseup)="onMouseUp()">
+  <mat-toolbar class="app-toolbar">
+    <span>Learning Management System</span>
+    <span class="toolbar-spacer"></span>
+    <span class="user-info">{{ currentUser()?.username }}</span>
+    @if (currentUser()?.isAdmin) {
+      <button mat-button (click)="navigateToAdmin()">
+        <mat-icon>admin_panel_settings</mat-icon>
+        Admin Panel
+      </button>
+    }
+    <button mat-button (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      Logout
+    </button>
+  </mat-toolbar>
+
+  <div class="content-container">
+    <div class="left-panel panel" [style.width.px]="leftPanelWidth()">
+      <app-tree-view 
+        (fileSelected)="onFileSelected($event)">
+      </app-tree-view>
+    </div>
+
+    <div class="resizer" 
+         (mousedown)="onMouseDown($event)"
+         [class.resizing]="isResizing()">
+    </div>
+
+    <div class="right-panel panel">
+      @if (selectedFile()) {
+        <app-file-viewer [file]="selectedFile()!"></app-file-viewer>
+      } @else {
+        <div class="empty-state">
+          <mat-icon>folder_open</mat-icon>
+          <p>Select a file from the tree to view</p>
+        </div>
+      }
+    </div>
+  </div>
+</div>

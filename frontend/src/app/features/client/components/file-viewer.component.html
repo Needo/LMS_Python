@@ -1,0 +1,67 @@
+<div class="viewer-container">
+  @if (isLoading()) {
+    <div class="loading-spinner">
+      <mat-spinner></mat-spinner>
+      <p>Loading file...</p>
+    </div>
+  } @else if (error()) {
+    <div class="error-state">
+      <mat-icon>error</mat-icon>
+      <p>{{ error() }}</p>
+    </div>
+  } @else if (fileContent()) {
+    <div class="viewer-content">
+      @switch (fileType()) {
+        @case (FileType.TEXT) {
+          <div class="text-viewer">{{ fileContent() }}</div>
+        }
+        @case (FileType.PDF) {
+          <iframe 
+            [src]="fileContent()" 
+            class="pdf-viewer"
+            frameborder="0">
+          </iframe>
+        }
+        @case (FileType.VIDEO) {
+          <video 
+            [src]="fileContent()" 
+            class="video-player" 
+            controls>
+            Your browser does not support video playback.
+          </video>
+        }
+        @case (FileType.AUDIO) {
+          <div class="audio-container">
+            <div class="audio-info">
+              <mat-icon>audio_file</mat-icon>
+              <h3>{{ file.name }}</h3>
+            </div>
+            <audio 
+              [src]="fileContent()" 
+              class="audio-player" 
+              controls>
+              Your browser does not support audio playback.
+            </audio>
+          </div>
+        }
+        @case (FileType.IMAGE) {
+          <div class="image-container">
+            <img 
+              [src]="fileContent()" 
+              [alt]="file.name"
+              class="image-viewer">
+          </div>
+        }
+        @case (FileType.EPUB) {
+          <div class="epub-container">
+            <p class="epub-notice">
+              <mat-icon>info</mat-icon>
+              EPUB viewer will be implemented with ngx-epub-viewer library
+            </p>
+            <p>File: {{ file.name }}</p>
+          </div>
+        }
+      }
+    </div>
+  }
+</div>
