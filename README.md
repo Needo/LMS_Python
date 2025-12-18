@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # Learning Management System (LMS)
 
 A modern, full-stack Learning Management System with file system scanning, multi-format file viewing, and user progress tracking.
@@ -303,3 +304,7 @@ If you encounter issues:
 # LMS_.Net
 Simple LMS with a file system scanner. developed with .net core api and angular.
 >>>>>>> 055499825408f3eb6b2e5d4af4ac87f84177cf1f
+=======
+# LMS_Python
+Python Fast API, Postgres, Angular based light weight learning or courese management system that can present the file system view directly in the browser.
+>>>>>>> c77168210b630d4eb0719c55009ea015c9503f54
