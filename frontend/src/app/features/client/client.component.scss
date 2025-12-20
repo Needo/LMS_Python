@@ -42,3 +42,23 @@
   margin-right: 16px;
   font-weight: 500;
 }
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.leaf-node {
+  padding-left: 40px; // align with expandable nodes
+}
+
+.node-label {
+  cursor: pointer;
+  user-select: none;
+}
+
+.selected {
+  background-color: rgba(0, 0, 0, 0.1);
+  font-weight: 500;
+}

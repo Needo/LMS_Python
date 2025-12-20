@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { User, LoginRequest, LoginResponse, RegisterRequest } from '../models/user.model';
 
@@ -20,8 +20,23 @@ export class AuthService {
   }
 
   login(credentials: LoginRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials)
+    return this.http.post<any>(`${this.apiUrl}/login`, credentials)
       .pipe(
+        map(response => {
+          // Convert snake_case to camelCase
+          const user: User = {
+            id: response.user.id,
+            username: response.user.username,
+            email: response.user.email,
+            isAdmin: response.user.is_admin, // Convert is_admin to isAdmin
+            createdAt: response.user.created_at
+          };
+          return {
+            access_token: response.access_token,
+            token_type: response.token_type,
+            user: user
+          };
+        }),
         tap(response => {
           this.setSession(response);
         })
@@ -29,7 +44,16 @@ export class AuthService {
   }
 
   register(data: RegisterRequest): Observable<User> {
-    return this.http.post<User>(`${this.apiUrl}/register`, data);
+    return this.http.post<any>(`${this.apiUrl}/register`, data)
+      .pipe(
+        map(response => ({
+          id: response.id,
+          username: response.username,
+          email: response.email,
+          isAdmin: response.is_admin,
+          createdAt: response.created_at
+        }))
+      );
   }
 
   logout(): void {

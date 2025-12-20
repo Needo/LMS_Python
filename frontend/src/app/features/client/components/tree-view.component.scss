@@ -1,11 +1,25 @@
-.tree {
+.tree-container {
+  height: 100%;
+  overflow: auto;
   padding: 8px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+}
+
+.mat-tree {
+  background: transparent;
 }
 
 .mat-tree-node {
   display: flex;
   align-items: center;
-  padding: 4px 0;
+  padding: 8px 4px;
+  min-height: 48px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
@@ -14,27 +28,57 @@
   background-color: #f5f5f5;
 }
 
+.leaf-node {
+  padding-left: 0;
+}
+
 .file-node.selected {
   background-color: #e3f2fd !important;
   font-weight: 500;
 }
 
 .node-label {
-  margin-left: 8px;
+  margin-left: 12px;
   user-select: none;
+  font-size: 14px;
+  cursor: pointer;
+  flex: 1;
 }
 
-.nested-nodes {
-  padding-left: 24px;
+/* CRITICAL: Proper indentation for nested children */
+.tree-node-children {
+  padding-left: 40px;
 }
 
-.tree-invisible {
-  display: none;
-}
-
+/* Icon sizing */
 mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+button mat-icon {
   font-size: 20px;
   width: 20px;
   height: 20px;
-  vertical-align: middle;
+}
+
+/* Different colors for different levels */
+.mat-tree-node[aria-level="1"] > mat-icon:not(.mat-icon-rtl-mirror) {
+  color: #667eea;
+}
+
+.mat-tree-node[aria-level="2"] > mat-icon:not(.mat-icon-rtl-mirror) {
+  color: #764ba2;
+}
+
+.mat-tree-node[aria-level="3"] > mat-icon:not(.mat-icon-rtl-mirror) {
+  color: #f59e0b;
+}
+
+.mat-tree-node[aria-level="4"] > mat-icon:not(.mat-icon-rtl-mirror) {
+  color: #10b981;
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { FileNode, FileType } from '../models/file.model';
 
@@ -13,11 +13,37 @@ export class FileService {
   constructor(private http: HttpClient) {}
 
   getFilesByCourse(courseId: number): Observable<FileNode[]> {
-    return this.http.get<FileNode[]>(`${this.apiUrl}/course/${courseId}`);
+    return this.http.get<any[]>(`${this.apiUrl}/course/${courseId}`)
+      .pipe(
+        map(files => files.map(file => ({
+          id: file.id,
+          courseId: file.course_id,
+          name: file.name,
+          path: file.path,
+          fileType: file.file_type,
+          parentId: file.parent_id,
+          isDirectory: file.is_directory,
+          size: file.size,
+          createdAt: file.created_at ? new Date(file.created_at) : undefined
+        })))
+      );
   }
 
   getFileById(id: number): Observable<FileNode> {
-    return this.http.get<FileNode>(`${this.apiUrl}/${id}`);
+    return this.http.get<any>(`${this.apiUrl}/${id}`)
+      .pipe(
+        map(file => ({
+          id: file.id,
+          courseId: file.course_id,
+          name: file.name,
+          path: file.path,
+          fileType: file.file_type,
+          parentId: file.parent_id,
+          isDirectory: file.is_directory,
+          size: file.size,
+          createdAt: file.created_at ? new Date(file.created_at) : undefined
+        }))
+      );
   }
 
   getFileContent(id: number): Observable<Blob> {

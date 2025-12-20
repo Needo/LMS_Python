@@ -49,11 +49,8 @@ export class LoginComponent {
       this.authService.login(this.loginForm.value).subscribe({
         next: (response) => {
           this.isLoading.set(false);
-          if (response.user.isAdmin) {
-            this.router.navigate(['/admin']);
-          } else {
-            this.router.navigate(['/client']);
-          }
+          // Always go to client view, admin can navigate to admin panel from there
+          this.router.navigate(['/client']);
         },
         error: (error) => {
           this.isLoading.set(false);

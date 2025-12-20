@@ -131,43 +131,79 @@ class ScannerService:
         
         existing_paths = {f.path: f for f in existing_files}
         scanned_paths: Set[str] = set()
+        
+        # Normalize course path
+        normalized_course_path = os.path.normpath(course_path)
+        
+        # Create a map to track newly created folders by path
+        new_folders_map: Dict[str, FileNode] = {}
 
-        # Scan directory recursively
+        # FIRST PASS: Scan and create all directories
         for root, dirs, files in os.walk(course_path):
-            # Process directories
+            normalized_root = os.path.normpath(root)
+            
             for dir_name in dirs:
                 dir_path = os.path.join(root, dir_name)
-                scanned_paths.add(dir_path)
+                normalized_dir_path = os.path.normpath(dir_path)
+                scanned_paths.add(normalized_dir_path)
                 
-                if dir_path not in existing_paths:
-                    # New directory found
-                    parent_id = self._get_parent_id(dir_path, course.id)
+                if normalized_dir_path not in existing_paths:
+                    parent_id = None
+                    
+                    if normalized_root != normalized_course_path:
+                        # Try to find parent in existing files
+                        if normalized_root in existing_paths:
+                            parent_id = existing_paths[normalized_root].id
+                        # Try to find parent in newly created folders
+                        elif normalized_root in new_folders_map:
+                            parent_id = new_folders_map[normalized_root].id
+                        else:
+                            print(f"WARNING: Parent not found for {dir_name} at {normalized_root}")
+                    
                     file_node = FileNode(
                         course_id=course.id,
                         name=dir_name,
-                        path=dir_path,
+                        path=normalized_dir_path,
                         file_type='folder',
                         parent_id=parent_id,
                         is_directory=True
                     )
                     self.db.add(file_node)
+                    self.db.flush()  # Flush immediately to get ID
+                    
+                    # Store in our map for parent lookup
+                    new_folders_map[normalized_dir_path] = file_node
                     added += 1
 
-            # Process files
+        # SECOND PASS: Scan and create all files
+        for root, dirs, files in os.walk(course_path):
+            normalized_root = os.path.normpath(root)
+            
             for file_name in files:
                 file_path = os.path.join(root, file_name)
-                scanned_paths.add(file_path)
+                normalized_file_path = os.path.normpath(file_path)
+                scanned_paths.add(normalized_file_path)
                 
-                if file_path not in existing_paths:
-                    # New file found
-                    parent_id = self._get_parent_id(file_path, course.id)
+                if normalized_file_path not in existing_paths:
+                    parent_id = None
+                    
+                    if normalized_root != normalized_course_path:
+                        # Try existing files first
+                        if normalized_root in existing_paths:
+                            parent_id = existing_paths[normalized_root].id
+                        # Try newly created folders
+                        elif normalized_root in new_folders_map:
+                            parent_id = new_folders_map[normalized_root].id
+                        else:
+                            print(f"WARNING: Parent not found for {file_name} at {normalized_root}")
+                    
                     file_type = self._get_file_type(file_name)
                     file_size = os.path.getsize(file_path)
                     
                     file_node = FileNode(
                         course_id=course.id,
                         name=file_name,
-                        path=file_path,
+                        path=normalized_file_path,
                         file_type=file_type,
                         parent_id=parent_id,
                         is_directory=False,
@@ -177,7 +213,7 @@ class ScannerService:
                     added += 1
                 else:
                     # Check if file was modified
-                    existing_file = existing_paths[file_path]
+                    existing_file = existing_paths[normalized_file_path]
                     new_size = os.path.getsize(file_path)
                     if existing_file.size != new_size:
                         existing_file.size = new_size
@@ -194,19 +230,6 @@ class ScannerService:
             'removed': removed,
             'updated': updated
         }
-
-    def _get_parent_id(self, file_path: str, course_id: int) -> int:
-        """
-        Get the parent ID for a file or directory.
-        """
-        parent_path = str(Path(file_path).parent)
-        
-        parent = self.db.query(FileNode).filter(
-            FileNode.course_id == course_id,
-            FileNode.path == parent_path
-        ).first()
-        
-        return parent.id if parent else None
 
     def _get_file_type(self, filename: str) -> str:
         """

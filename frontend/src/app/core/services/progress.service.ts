@@ -26,10 +26,10 @@ export class ProgressService {
 
   updateProgress(userId: number, fileId: number, status: ProgressStatus, lastPosition?: number): Observable<UserProgress> {
     return this.http.post<UserProgress>(`${this.apiUrl}`, {
-      userId,
-      fileId,
-      status,
-      lastPosition
+      user_id: userId,
+      file_id: fileId,
+      status: status,
+      last_position: lastPosition
     }).pipe(
       tap(progress => this.currentProgressSignal.set(progress))
     );
@@ -44,9 +44,9 @@ export class ProgressService {
 
   setLastViewed(userId: number, courseId: number, fileId: number): Observable<LastViewed> {
     return this.http.post<LastViewed>(`${this.apiUrl}/last-viewed`, {
-      userId,
-      courseId,
-      fileId
+      user_id: userId,
+      course_id: courseId,
+      file_id: fileId
     }).pipe(
       tap(lastViewed => this.lastViewedSignal.set(lastViewed))
     );

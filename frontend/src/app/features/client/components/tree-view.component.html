@@ -1,39 +1,51 @@
 <div class="tree-container">
-  @if (isLoading()) {
-    <div class="loading-spinner">
-      <mat-spinner diameter="40"></mat-spinner>
-    </div>
-  } @else {
-    <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="tree">
-      <mat-tree-node *matTreeNodeDef="let node" 
-                     matTreeNodeToggle
-                     [class]="getNodeClass(node)"
-                     (click)="onNodeClick(node)">
-        <button mat-icon-button disabled></button>
-        <mat-icon [class]="getNodeClass(node)">{{ getNodeIcon(node) }}</mat-icon>
-        <span class="node-label">{{ node.name }}</span>
-      </mat-tree-node>
+  <!-- Loading spinner -->
+  <div *ngIf="isLoading()" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
 
-      <mat-nested-tree-node *matTreeNodeDef="let node; when: hasChild">
-        <div class="mat-tree-node" [class]="getNodeClass(node)">
-          <button mat-icon-button 
-                  matTreeNodeToggle
-                  [attr.aria-label]="'Toggle ' + node.name"
-                  (click)="toggleNode(node)">
-            <mat-icon class="mat-icon-rtl-mirror">
-              {{ treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right' }}
-            </mat-icon>
-          </button>
-          <mat-icon [class]="getNodeClass(node)">{{ getNodeIcon(node) }}</mat-icon>
-          <span class="node-label">{{ node.name }}</span>
-        </div>
-        
-        @if (treeControl.isExpanded(node)) {
-          <div class="nested-nodes" [class.tree-invisible]="!treeControl.isExpanded(node)">
-            <ng-container matTreeNodeOutlet></ng-container>
-          </div>
-        }
-      </mat-nested-tree-node>
-    </mat-tree>
-  }
+  <!-- The mat-tree with trackBy -->
+  <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" [trackBy]="trackByNode">
+
+    <!-- For expandable nodes (category, course, folder) -->
+    <mat-nested-tree-node *matTreeNodeDef="let node; when: hasChild">
+      <div class="mat-tree-node" [class]="getNodeClass(node)">
+        <button mat-icon-button 
+                [attr.aria-label]="'Toggle ' + node.name"
+                (click)="treeControl.toggle(node); loadChildrenIfNeeded(node)">
+          <mat-icon class="mat-icon-rtl-mirror">
+            {{ treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right' }}
+          </mat-icon>
+        </button>
+
+        <mat-icon [class]="getNodeClass(node)">{{ getNodeIcon(node) }}</mat-icon>
+
+        <span class="node-label" 
+              (click)="treeControl.toggle(node); loadChildrenIfNeeded(node)">
+          {{ node.name }}
+        </span>
+      </div>
+
+      <!-- Children container with proper class -->
+      <div class="tree-node-children" *ngIf="treeControl.isExpanded(node)">
+        <ng-container matTreeNodeOutlet></ng-container>
+      </div>
+    </mat-nested-tree-node>
+
+    <!-- For leaf nodes (actual files) -->
+    <mat-tree-node *matTreeNodeDef="let node; when: isLeafNode">
+      <div class="mat-tree-node leaf-node" [class]="getNodeClass(node)">
+        <!-- Spacer to align with expandable nodes -->
+        <button mat-icon-button disabled></button>
+    
+        <mat-icon [class]="getNodeClass(node)">{{ getNodeIcon(node) }}</mat-icon>
+    
+        <!-- Only emit selection on file click -->
+        <span class="node-label" (click)="onNodeClick(node)">
+          {{ node.name }}
+        </span>
+      </div>
+    </mat-tree-node>
+
+  </mat-tree>
 </div>

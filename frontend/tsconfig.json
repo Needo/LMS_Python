@@ -11,6 +11,7 @@
     "isolatedModules": true,
     "experimentalDecorators": true,
     "importHelpers": true,
+    "sourceMap": true,  // ← This must be true
     "target": "ES2022",
     "module": "preserve"
   },
@@ -19,7 +20,7 @@
     "strictInjectionParameters": false,
     "strictInputAccessModifiers": false,
     "strictTemplates": false
-  },
+  },  
   "files": [],
   "references": [
     {
