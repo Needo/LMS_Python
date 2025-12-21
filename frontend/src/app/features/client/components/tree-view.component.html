@@ -10,9 +10,8 @@
     <!-- For expandable nodes (category, course, folder) -->
     <mat-nested-tree-node *matTreeNodeDef="let node; when: hasChild">
       <div class="mat-tree-node" [class]="getNodeClass(node)">
-        <button mat-icon-button 
-                [attr.aria-label]="'Toggle ' + node.name"
-                (click)="treeControl.toggle(node); loadChildrenIfNeeded(node)">
+        <button mat-icon-button [attr.aria-label]="'Toggle ' + node.name"
+          (click)="treeControl.toggle(node); loadChildrenIfNeeded(node)">
           <mat-icon class="mat-icon-rtl-mirror">
             {{ treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right' }}
           </mat-icon>
@@ -20,14 +19,13 @@
 
         <mat-icon [class]="getNodeClass(node)">{{ getNodeIcon(node) }}</mat-icon>
 
-        <span class="node-label" 
-              (click)="treeControl.toggle(node); loadChildrenIfNeeded(node)">
+        <span class="node-label" (click)="treeControl.toggle(node); loadChildrenIfNeeded(node)">
           {{ node.name }}
         </span>
       </div>
 
-      <!-- Children container with proper class -->
-      <div class="tree-node-children" *ngIf="treeControl.isExpanded(node)">
+      <!-- Children container - NO *ngIf, Angular Material handles visibility -->
+      <div class="tree-node-children">
         <ng-container matTreeNodeOutlet></ng-container>
       </div>
     </mat-nested-tree-node>
@@ -37,9 +35,9 @@
       <div class="mat-tree-node leaf-node" [class]="getNodeClass(node)">
         <!-- Spacer to align with expandable nodes -->
         <button mat-icon-button disabled></button>
-    
+
         <mat-icon [class]="getNodeClass(node)">{{ getNodeIcon(node) }}</mat-icon>
-    
+
         <!-- Only emit selection on file click -->
         <span class="node-label" (click)="onNodeClick(node)">
           {{ node.name }}

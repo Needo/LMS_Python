@@ -38,7 +38,7 @@ interface TreeNode {
 export class TreeViewComponent implements OnInit {
   @Output() fileSelected = new EventEmitter<FileNode>();
 
-  treeControl = new NestedTreeControl<TreeNode>(node => node.children);
+  treeControl = new NestedTreeControl<TreeNode>(node => node.children || []);
   dataSource = new MatTreeNestedDataSource<TreeNode>();
   
   isLoading = signal(false);
@@ -87,13 +87,13 @@ export class TreeViewComponent implements OnInit {
     });
   }
 
-  // Called when toggle button is clicked
+  // Called AFTER toggle button is clicked
   loadChildrenIfNeeded(node: TreeNode): void {
-    const wasExpanded = this.treeControl.isExpanded(node);
-    console.log('loadChildrenIfNeeded:', node.name, 'wasExpanded:', wasExpanded);
+    const isNowExpanded = this.treeControl.isExpanded(node);
+    console.log('loadChildrenIfNeeded:', node.name, 'isNowExpanded:', isNowExpanded, 'children:', node.children?.length);
     
-    // If clicking to expand AND no children loaded yet
-    if (wasExpanded && (!node.children || node.children.length === 0)) {
+    // Load children only when expanding (isNowExpanded = true) AND no children loaded yet
+    if (isNowExpanded && (!node.children || node.children.length === 0)) {
       console.log('Loading children for:', node.name, node.type);
       
       if (node.type === 'category') {
@@ -101,6 +101,8 @@ export class TreeViewComponent implements OnInit {
       } else if (node.type === 'course') {
         this.loadFilesForCourse(node);
       }
+    } else {
+      console.log('Not loading - isNowExpanded:', isNowExpanded, 'hasChildren:', (node.children?.length || 0) > 0);
     }
   }
 
@@ -119,21 +121,53 @@ export class TreeViewComponent implements OnInit {
           children: []
         }));
 
-        // Mutate the existing node
+        // Assign the children to the node
         categoryNode.children = newChildren;
         
         console.log('Category node now has', categoryNode.children.length, 'children');
+        console.log('Children:', categoryNode.children);
         
-        // Collapse then expand to force re-render
-        this.treeControl.collapse(categoryNode);
-        this.treeControl.expand(categoryNode);
+        // Trigger change detection by creating new data array
+        this.dataSource.data = [...this.dataSource.data];
         
-        console.log('Node re-expanded, is expanded?', this.treeControl.isExpanded(categoryNode));
+        console.log('Data source updated, new data:', this.dataSource.data);
+        
+        // Re-expand the node since data update may have collapsed it
+        // Use setTimeout to ensure the view has updated
+        setTimeout(() => {
+          const nodeToExpand = this.findNodeInData(categoryNode.id, categoryNode.type);
+          console.log('Found node to expand:', nodeToExpand);
+          console.log('Node has children?', nodeToExpand?.children?.length);
+          console.log('Is node expanded before re-expand?', this.treeControl.isExpanded(nodeToExpand!));
+          
+          if (nodeToExpand) {
+            this.treeControl.expand(nodeToExpand);
+            console.log('Node re-expanded after data update');
+            console.log('Is node expanded after re-expand?', this.treeControl.isExpanded(nodeToExpand));
+          }
+        }, 0);
       },
       error: (error) => {
         console.error('Error loading courses:', error);
       }
     });
+  }
+
+  // Helper method to find a node in the current data by id and type
+  private findNodeInData(id: number, type: string): TreeNode | null {
+    const searchNode = (nodes: TreeNode[]): TreeNode | null => {
+      for (const node of nodes) {
+        if (node.id === id && node.type === type) {
+          return node;
+        }
+        if (node.children) {
+          const found = searchNode(node.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    return searchNode(this.dataSource.data);
   }
 
   loadFilesForCourse(courseNode: TreeNode): void {
@@ -146,16 +180,22 @@ export class TreeViewComponent implements OnInit {
         const newChildren = this.buildFileTree(files);
         console.log('Built tree with', newChildren.length, 'root nodes');
         
-        // Mutate the existing node
+        // Assign the children
         courseNode.children = newChildren;
         
         console.log('Course node now has', courseNode.children.length, 'children');
         
-        // Collapse then expand to force re-render
-        this.treeControl.collapse(courseNode);
-        this.treeControl.expand(courseNode);
+        // Trigger change detection by creating new data array
+        this.dataSource.data = [...this.dataSource.data];
         
-        console.log('Node re-expanded, is expanded?', this.treeControl.isExpanded(courseNode));
+        // Re-expand the node since data update may have collapsed it
+        setTimeout(() => {
+          const nodeToExpand = this.findNodeInData(courseNode.id, courseNode.type);
+          if (nodeToExpand) {
+            this.treeControl.expand(nodeToExpand);
+            console.log('Node re-expanded after data update');
+          }
+        }, 0);
       },
       error: (error) => {
         console.error('Error loading files:', error);
