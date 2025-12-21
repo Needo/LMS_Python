@@ -4,6 +4,10 @@
       <mat-card-title>Login to LMS</mat-card-title>
     </mat-card-header>
     <mat-card-content>
+      @if (sessionExpiredMessage()) {
+        <div class="info-message">{{ sessionExpiredMessage() }}</div>
+      }
+      
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
         <mat-form-field class="form-field">
           <mat-label>Username</mat-label>

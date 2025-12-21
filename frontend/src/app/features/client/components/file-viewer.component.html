@@ -53,12 +53,18 @@
           </div>
         }
         @case (FileType.EPUB) {
-          <div class="epub-container">
-            <p class="epub-notice">
-              <mat-icon>info</mat-icon>
-              EPUB viewer will be implemented with ngx-epub-viewer library
-            </p>
-            <p>File: {{ file.name }}</p>
+          <div class="epub-viewer-wrapper">
+            <div class="epub-viewer-container" #epubViewer></div>
+            @if (epubReady()) {
+              <div class="epub-controls">
+                <button mat-icon-button (click)="epubPrev()" title="Previous Page">
+                  <mat-icon>chevron_left</mat-icon>
+                </button>
+                <button mat-icon-button (click)="epubNext()" title="Next Page">
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+              </div>
+            }
           </div>
         }
       }

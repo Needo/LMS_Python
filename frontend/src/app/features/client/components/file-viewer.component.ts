@@ -1,8 +1,10 @@
-import { Component, Input, OnChanges, SimpleChanges, signal, effect } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, signal, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import ePub from 'epubjs';
 import { FileService } from '../../../core/services/file.service';
 import { ProgressService } from '../../../core/services/progress.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -15,18 +17,25 @@ import { ProgressStatus } from '../../../core/models/progress.model';
   imports: [
     CommonModule,
     MatProgressSpinnerModule,
-    MatIconModule
+    MatIconModule,
+    MatButtonModule
   ],
   templateUrl: './file-viewer.component.html',
   styleUrls: ['./file-viewer.component.scss']
 })
-export class FileViewerComponent implements OnChanges {
+export class FileViewerComponent implements OnChanges, OnDestroy {
   @Input() file!: FileNode;
+  @ViewChild('epubViewer', { static: false }) epubViewerRef!: ElementRef;
 
   fileType = signal<FileType>(FileType.UNKNOWN);
   fileContent = signal<string | SafeResourceUrl | null>(null);
   isLoading = signal(false);
   error = signal<string | null>(null);
+
+  // EPUB specific properties
+  private epubBook: any = null;
+  private epubRendition: any = null;
+  epubReady = signal(false);
 
   FileType = FileType;
 
@@ -39,8 +48,26 @@ export class FileViewerComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['file'] && this.file) {
+      // Clean up previous EPUB if exists
+      this.cleanupEpub();
       this.loadFile();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.cleanupEpub();
+  }
+
+  private cleanupEpub(): void {
+    if (this.epubRendition) {
+      this.epubRendition.destroy();
+      this.epubRendition = null;
+    }
+    if (this.epubBook) {
+      this.epubBook.destroy();
+      this.epubBook = null;
+    }
+    this.epubReady.set(false);
   }
 
   loadFile(): void {
@@ -125,9 +152,56 @@ export class FileViewerComponent implements OnChanges {
   }
 
   loadEpubFile(blob: Blob): void {
-    const url = URL.createObjectURL(blob);
-    this.fileContent.set(url);
-    this.isLoading.set(false);
+    // Convert blob to ArrayBuffer for epub.js
+    blob.arrayBuffer().then(buffer => {
+      this.fileContent.set(buffer);
+      this.isLoading.set(false);
+      // Initialize EPUB after view is ready
+      setTimeout(() => this.initializeEpub(buffer), 100);
+    }).catch(error => {
+      this.error.set('Error loading EPUB file');
+      this.isLoading.set(false);
+      console.error('Error loading EPUB:', error);
+    });
+  }
+
+  private initializeEpub(buffer: ArrayBuffer): void {
+    if (!this.epubViewerRef) {
+      console.error('EPUB viewer element not found');
+      return;
+    }
+
+    try {
+      // Create the EPUB book
+      this.epubBook = ePub(buffer);
+      
+      // Render to the viewer element
+      this.epubRendition = this.epubBook.renderTo(this.epubViewerRef.nativeElement, {
+        width: '100%',
+        height: '100%',
+        spread: 'none'
+      });
+
+      // Display the first page
+      this.epubRendition.display();
+      this.epubReady.set(true);
+    } catch (error) {
+      console.error('Error initializing EPUB:', error);
+      this.error.set('Failed to initialize EPUB viewer');
+    }
+  }
+
+  // Navigation methods for EPUB
+  epubNext(): void {
+    if (this.epubRendition) {
+      this.epubRendition.next();
+    }
+  }
+
+  epubPrev(): void {
+    if (this.epubRendition) {
+      this.epubRendition.prev();
+    }
   }
 
   markAsViewed(): void {
