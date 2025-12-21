@@ -18,8 +18,8 @@
 .mat-tree-node {
   display: flex;
   align-items: center;
-  padding: 8px 4px;
-  min-height: 48px;
+  padding: 2px 4px;
+  min-height: 32px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
@@ -85,4 +85,37 @@ button mat-icon {
 
 .mat-tree-node[aria-level="4"] > mat-icon:not(.mat-icon-rtl-mirror) {
   color: #10b981;
+}
+
+/* File type specific icon colors */
+.icon-pdf {
+  color: #ef4444 !important; /* Red for PDF */
+}
+
+.icon-video {
+  color: #8b5cf6 !important; /* Purple for video */
+}
+
+.icon-audio {
+  color: #06b6d4 !important; /* Cyan for audio */
+}
+
+.icon-image {
+  color: #f59e0b !important; /* Amber for images */
+}
+
+.icon-text {
+  color: #6b7280 !important; /* Gray for text */
+}
+
+.icon-epub {
+  color: #ec4899 !important; /* Pink for ebooks */
+}
+
+.icon-folder {
+  color: #fbbf24 !important; /* Yellow for folders */
+}
+
+.icon-unknown {
+  color: #9ca3af !important; /* Light gray for unknown */
 }

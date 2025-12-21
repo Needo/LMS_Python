@@ -1,25 +1,29 @@
-import { Component, OnInit, signal, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, signal, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatTreeModule, MatTreeNestedDataSource } from '@angular/material/tree';
-import { NestedTreeControl } from '@angular/cdk/tree';
+import { CdkTreeModule } from '@angular/cdk/tree';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { BehaviorSubject } from 'rxjs';
 import { CategoryService } from '../../../core/services/category.service';
 import { CourseService } from '../../../core/services/course.service';
 import { FileService } from '../../../core/services/file.service';
-import { Category } from '../../../core/models/category.model';
-import { Course } from '../../../core/models/course.model';
 import { FileNode, FileType } from '../../../core/models/file.model';
 
-interface TreeNode {
-  id: number;
-  name: string;
-  type: 'category' | 'course' | 'file' | 'folder';
-  fileType?: FileType;
-  children?: TreeNode[];
-  fileData?: FileNode;
-  isExpandable: boolean;
+// TreeNode with BehaviorSubject for children (required for Angular 18+)
+class TreeNode {
+  // CRITICAL: children must be Observable for Angular Material tree
+  children = new BehaviorSubject<TreeNode[]>([]);
+  loading = signal(false);
+  
+  constructor(
+    public id: number,
+    public name: string,
+    public type: 'category' | 'course' | 'file' | 'folder',
+    public isExpandable: boolean,
+    public fileType?: FileType,
+    public fileData?: FileNode
+  ) {}
 }
 
 @Component({
@@ -27,7 +31,7 @@ interface TreeNode {
   standalone: true,
   imports: [
     CommonModule,
-    MatTreeModule,
+    CdkTreeModule,
     MatIconModule,
     MatButtonModule,
     MatProgressSpinnerModule
@@ -38,8 +42,11 @@ interface TreeNode {
 export class TreeViewComponent implements OnInit {
   @Output() fileSelected = new EventEmitter<FileNode>();
 
-  treeControl = new NestedTreeControl<TreeNode>(node => node.children || []);
-  dataSource = new MatTreeNestedDataSource<TreeNode>();
+  // No more TreeControl! Use childrenAccessor instead
+  childrenAccessor = (node: TreeNode) => node.children.asObservable();
+  
+  // Root nodes as BehaviorSubject
+  rootNodes = new BehaviorSubject<TreeNode[]>([]);
   
   isLoading = signal(false);
   selectedNodeId = signal<number | null>(null);
@@ -47,8 +54,7 @@ export class TreeViewComponent implements OnInit {
   constructor(
     private categoryService: CategoryService,
     private courseService: CourseService,
-    private fileService: FileService,
-    private cdr: ChangeDetectorRef
+    private fileService: FileService
   ) {}
 
   ngOnInit(): void {
@@ -57,11 +63,8 @@ export class TreeViewComponent implements OnInit {
 
   // Check if node has children (for expansion arrow)
   hasChild = (_: number, node: TreeNode) => node.isExpandable;
-  
-  // Check if node is a leaf (actual file, not folder)
-  isLeafNode = (_: number, node: TreeNode) => !node.isExpandable;
 
-  // CRITICAL: TrackBy function to maintain node identity
+  // TrackBy function
   trackByNode = (index: number, node: TreeNode) => `${node.type}-${node.id}`;
 
   loadTree(): void {
@@ -69,15 +72,16 @@ export class TreeViewComponent implements OnInit {
     
     this.categoryService.getCategories().subscribe({
       next: (categories) => {
-        const treeData: TreeNode[] = categories.map(category => ({
-          id: category.id,
-          name: category.name,
-          type: 'category',
-          isExpandable: true,
-          children: [] // Always empty array, not undefined
-        }));
+        const treeData: TreeNode[] = categories.map(category => 
+          new TreeNode(
+            category.id,
+            category.name,
+            'category',
+            true
+          )
+        );
         
-        this.dataSource.data = treeData;
+        this.rootNodes.next(treeData);
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -87,139 +91,81 @@ export class TreeViewComponent implements OnInit {
     });
   }
 
-  // Called AFTER toggle button is clicked
-  loadChildrenIfNeeded(node: TreeNode): void {
-    const isNowExpanded = this.treeControl.isExpanded(node);
-    console.log('loadChildrenIfNeeded:', node.name, 'isNowExpanded:', isNowExpanded, 'children:', node.children?.length);
-    
-    // Load children only when expanding (isNowExpanded = true) AND no children loaded yet
-    if (isNowExpanded && (!node.children || node.children.length === 0)) {
-      console.log('Loading children for:', node.name, node.type);
-      
+  // Handle expansion events from the tree
+  handleNodeExpansion(isExpanding: boolean, node: TreeNode): void {
+    if (isExpanding) {
+      this.expandNode(node);
+    }
+  }
+
+  private expandNode(node: TreeNode): void {
+    // Only load children if not already loaded
+    if (node.children.value.length === 0 && !node.loading()) {
       if (node.type === 'category') {
         this.loadCoursesForCategory(node);
       } else if (node.type === 'course') {
         this.loadFilesForCourse(node);
       }
-    } else {
-      console.log('Not loading - isNowExpanded:', isNowExpanded, 'hasChildren:', (node.children?.length || 0) > 0);
     }
   }
 
-  loadCoursesForCategory(categoryNode: TreeNode): void {
-    console.log('Loading courses for category:', categoryNode.id);
+  private loadCoursesForCategory(categoryNode: TreeNode): void {
+    categoryNode.loading.set(true);
     
     this.courseService.getCoursesByCategory(categoryNode.id).subscribe({
       next: (courses) => {
-        console.log('Courses loaded:', courses.length);
-        
-        const newChildren: TreeNode[] = courses.map(course => ({
-          id: course.id,
-          name: course.name,
-          type: 'course',
-          isExpandable: true,
-          children: []
-        }));
+        const childNodes: TreeNode[] = courses.map(course => 
+          new TreeNode(
+            course.id,
+            course.name,
+            'course',
+            true
+          )
+        );
 
-        // Assign the children to the node
-        categoryNode.children = newChildren;
-        
-        console.log('Category node now has', categoryNode.children.length, 'children');
-        console.log('Children:', categoryNode.children);
-        
-        // Trigger change detection by creating new data array
-        this.dataSource.data = [...this.dataSource.data];
-        
-        console.log('Data source updated, new data:', this.dataSource.data);
-        
-        // Re-expand the node since data update may have collapsed it
-        // Use setTimeout to ensure the view has updated
-        setTimeout(() => {
-          const nodeToExpand = this.findNodeInData(categoryNode.id, categoryNode.type);
-          console.log('Found node to expand:', nodeToExpand);
-          console.log('Node has children?', nodeToExpand?.children?.length);
-          console.log('Is node expanded before re-expand?', this.treeControl.isExpanded(nodeToExpand!));
-          
-          if (nodeToExpand) {
-            this.treeControl.expand(nodeToExpand);
-            console.log('Node re-expanded after data update');
-            console.log('Is node expanded after re-expand?', this.treeControl.isExpanded(nodeToExpand));
-          }
-        }, 0);
+        // Update the BehaviorSubject - this triggers the tree to re-render
+        categoryNode.children.next(childNodes);
+        categoryNode.loading.set(false);
       },
       error: (error) => {
         console.error('Error loading courses:', error);
+        categoryNode.loading.set(false);
       }
     });
   }
 
-  // Helper method to find a node in the current data by id and type
-  private findNodeInData(id: number, type: string): TreeNode | null {
-    const searchNode = (nodes: TreeNode[]): TreeNode | null => {
-      for (const node of nodes) {
-        if (node.id === id && node.type === type) {
-          return node;
-        }
-        if (node.children) {
-          const found = searchNode(node.children);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-    return searchNode(this.dataSource.data);
-  }
-
-  loadFilesForCourse(courseNode: TreeNode): void {
-    console.log('Loading files for course:', courseNode.id);
+  private loadFilesForCourse(courseNode: TreeNode): void {
+    courseNode.loading.set(true);
     
     this.fileService.getFilesByCourse(courseNode.id).subscribe({
       next: (files) => {
-        console.log('Files loaded:', files.length);
+        const childNodes = this.buildFileTree(files);
         
-        const newChildren = this.buildFileTree(files);
-        console.log('Built tree with', newChildren.length, 'root nodes');
-        
-        // Assign the children
-        courseNode.children = newChildren;
-        
-        console.log('Course node now has', courseNode.children.length, 'children');
-        
-        // Trigger change detection by creating new data array
-        this.dataSource.data = [...this.dataSource.data];
-        
-        // Re-expand the node since data update may have collapsed it
-        setTimeout(() => {
-          const nodeToExpand = this.findNodeInData(courseNode.id, courseNode.type);
-          if (nodeToExpand) {
-            this.treeControl.expand(nodeToExpand);
-            console.log('Node re-expanded after data update');
-          }
-        }, 0);
+        // Update the BehaviorSubject
+        courseNode.children.next(childNodes);
+        courseNode.loading.set(false);
       },
       error: (error) => {
         console.error('Error loading files:', error);
+        courseNode.loading.set(false);
       }
     });
   }
 
-  buildFileTree(files: FileNode[]): TreeNode[] {
-    console.log('Building file tree from', files.length, 'files');
-    
+  private buildFileTree(files: FileNode[]): TreeNode[] {
     const fileMap = new Map<number, TreeNode>();
     const rootNodes: TreeNode[] = [];
 
     // First pass: Create all tree nodes
     files.forEach(file => {
-      const treeNode: TreeNode = {
-        id: file.id,
-        name: file.name,
-        type: file.isDirectory ? 'folder' : 'file',
-        fileType: file.isDirectory ? undefined : this.fileService.getFileType(file.name),
-        fileData: file.isDirectory ? undefined : file,
-        isExpandable: file.isDirectory,
-        children: file.isDirectory ? [] : undefined
-      };
+      const treeNode = new TreeNode(
+        file.id,
+        file.name,
+        file.isDirectory ? 'folder' : 'file',
+        file.isDirectory,
+        file.isDirectory ? undefined : this.fileService.getFileType(file.name),
+        file.isDirectory ? undefined : file
+      );
       
       fileMap.set(file.id, treeNode);
     });
@@ -229,29 +175,26 @@ export class TreeViewComponent implements OnInit {
       const treeNode = fileMap.get(file.id)!;
       
       if (file.parentId === null) {
-        // Root level file/folder
         rootNodes.push(treeNode);
       } else {
-        // Child file/folder
         const parentNode = fileMap.get(file.parentId);
-        if (parentNode?.children) {
-          parentNode.children.push(treeNode);
+        if (parentNode) {
+          // Add to parent's children BehaviorSubject
+          const currentChildren = parentNode.children.value;
+          parentNode.children.next([...currentChildren, treeNode]);
         } else {
           console.warn('Parent not found for:', file.name, 'parent_id:', file.parentId);
-          // Add to root as fallback
           rootNodes.push(treeNode);
         }
       }
     });
 
-    console.log('File tree built:', rootNodes.length, 'root nodes');
     return rootNodes;
   }
 
   onNodeClick(node: TreeNode): void {
     // Only handle file clicks (not folders)
     if (node.type === 'file' && node.fileData) {
-      console.log('File clicked:', node.name);
       this.selectedNodeId.set(node.id);
       this.fileSelected.emit(node.fileData);
     }
@@ -263,7 +206,7 @@ export class TreeViewComponent implements OnInit {
     } else if (node.type === 'course') {
       return 'school';
     } else if (node.type === 'folder') {
-      return this.treeControl.isExpanded(node) ? 'folder_open' : 'folder';
+      return 'folder';
     } else if (node.fileType) {
       return this.fileService.getFileIcon(node.fileType);
     }
@@ -280,8 +223,14 @@ export class TreeViewComponent implements OnInit {
       }
     }
     
+    // Add file type specific class
     if (node.fileType) {
       classes.push(`icon-${node.fileType}`);
+    }
+    
+    // Add folder class for folders
+    if (node.type === 'folder') {
+      classes.push('icon-folder');
     }
     
     return classes.join(' ');
