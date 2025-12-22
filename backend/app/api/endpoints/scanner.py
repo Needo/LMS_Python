@@ -5,18 +5,39 @@ from app.models import User
 from app.schemas import ScanRequest, ScanResult, RootPathRequest, RootPathResponse
 from app.services import ScannerService
 from app.core.dependencies import get_current_user
+from app.core.rate_limit import check_rate_limit
+from app.core.config import settings
+from fastapi import Request
 
 router = APIRouter()
 
 @router.post("/scan", response_model=ScanResult)
 def scan_root_folder(
     scan_request: ScanRequest,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
     Scan the root folder and populate the database.
+    Admin only with rate limiting.
     """
+    # Check if user is admin
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Only administrators can scan folders"
+        )
+    
+    # Rate limiting
+    if settings.ENABLE_RATE_LIMITING:
+        check_rate_limit(
+            request, 
+            max_requests=settings.SCAN_RATE_LIMIT,
+            window_seconds=3600,  # 1 hour
+            key_prefix="scan"
+        )
+    
     scanner_service = ScannerService(db)
     return scanner_service.scan_root_folder(scan_request.root_path)
 

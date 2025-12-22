@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List
 import os
 from app.db.database import get_db
 from app.core.dependencies import get_current_user
+from app.core.rate_limit import check_rate_limit
+from app.core.config import settings
 from app.models.user import User
 from app.schemas.backup import (
     BackupCreate, BackupResponse, BackupListResponse,
@@ -30,10 +32,20 @@ def get_current_active_admin(
 @router.post("/create", response_model=BackupResponse)
 async def create_backup(
     backup_data: BackupCreate,
+    request: Request,
     current_user: User = Depends(get_current_active_admin),
     db: Session = Depends(get_db)
 ):
-    """Create a new database backup"""
+    """Create a new database backup with rate limiting"""
+    # Rate limiting
+    if settings.ENABLE_RATE_LIMITING:
+        check_rate_limit(
+            request,
+            max_requests=settings.ADMIN_RATE_LIMIT,
+            window_seconds=3600,
+            key_prefix="admin:backup"
+        )
+    
     try:
         backup_service = BackupService(db)
         backup = backup_service.create_backup(

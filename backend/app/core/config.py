@@ -28,9 +28,15 @@ class Settings(BaseSettings):
     
     # File Storage Configuration
     ROOT_FOLDER_PATH: Optional[str] = None
-    MAX_FILE_SIZE: int = 104857600  # 100MB default
+    MAX_FILE_SIZE: int = 1073741824  # 1GB default (was 100MB)
     ALLOWED_EXTENSIONS: str = ".pdf,.mp4,.mp3,.txt,.docx,.jpg,.png,.epub"
     SCAN_DEPTH: int = 10
+    
+    # Security Settings
+    ENABLE_RATE_LIMITING: bool = True
+    SCAN_RATE_LIMIT: int = 5  # requests per hour
+    ADMIN_RATE_LIMIT: int = 30  # requests per hour
+    VALIDATE_MIME_TYPES: bool = False  # Disabled for performance
     
     # Backup Configuration
     BACKUP_DIR: str = "./backups"

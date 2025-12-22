@@ -4,6 +4,8 @@ from typing import List, Dict, Set
 from sqlalchemy.orm import Session
 from app.models import Category, Course, FileNode, Settings as SettingsModel
 from app.schemas import ScanResult
+from app.core.security_utils import SecurityValidator, is_safe_path
+from app.core.config import settings
 
 class ScannerService:
     # Default categories
@@ -182,6 +184,25 @@ class ScannerService:
             for file_name in files:
                 file_path = os.path.join(root, file_name)
                 normalized_file_path = os.path.normpath(file_path)
+                
+                # Security validation
+                # 1. Path traversal check
+                if not is_safe_path(normalized_file_path, course_path):
+                    print(f"SECURITY: Skipping file outside course path: {file_name}")
+                    continue
+                
+                # 2. Extension validation
+                is_valid_ext, ext_error = SecurityValidator.validate_extension(file_name)
+                if not is_valid_ext:
+                    print(f"SECURITY: Skipping file with invalid extension: {file_name}")
+                    continue
+                
+                # 3. File size validation
+                is_valid_size, size_error = SecurityValidator.validate_file_size(file_path)
+                if not is_valid_size:
+                    print(f"SECURITY: Skipping oversized file: {file_name}")
+                    continue
+                
                 scanned_paths.add(normalized_file_path)
                 
                 if normalized_file_path not in existing_paths:
