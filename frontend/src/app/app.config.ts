@@ -4,13 +4,14 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { tokenRefreshInterceptor } from './core/interceptors/token-refresh.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(
-      withInterceptors([authInterceptor])
+      withInterceptors([authInterceptor, tokenRefreshInterceptor])
     ),
     provideAnimationsAsync()
   ]

@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+import secrets
 from app.core.config import settings
 
 # Simple password context without bcrypt complications
@@ -27,19 +28,30 @@ def get_password_hash(password: str) -> str:
         return hashlib.sha256(password.encode()).hexdigest()
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Create short-lived access token (15 minutes)"""
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+        expire = datetime.utcnow() + timedelta(minutes=15)  # Short-lived
+    to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
+
+def create_refresh_token() -> str:
+    """Create random refresh token"""
+    return secrets.token_urlsafe(32)
 
 def decode_access_token(token: str) -> Optional[str]:
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         username: str = payload.get("sub")
+        token_type: str = payload.get("type")
+        
+        # Ensure it's an access token
+        if token_type != "access":
+            return None
+            
         return username
     except JWTError:
         return None

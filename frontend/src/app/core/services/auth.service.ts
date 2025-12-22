@@ -28,11 +28,12 @@ export class AuthService {
             id: response.user.id,
             username: response.user.username,
             email: response.user.email,
-            isAdmin: response.user.is_admin, // Convert is_admin to isAdmin
+            isAdmin: response.user.is_admin,
             createdAt: response.user.created_at
           };
           return {
             access_token: response.access_token,
+            refresh_token: response.refresh_token, // NEW
             token_type: response.token_type,
             user: user
           };
@@ -57,10 +58,37 @@ export class AuthService {
   }
 
   logout(): void {
+    const refreshToken = localStorage.getItem('refresh_token');
+    
+    // Call logout endpoint to revoke refresh token
+    if (refreshToken) {
+      this.http.post(`${this.apiUrl}/logout`, { refresh_token: refreshToken })
+        .subscribe();
+    }
+    
+    // Clear local storage
     localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('current_user');
     this.currentUserSignal.set(null);
     this.isAuthenticatedSignal.set(false);
+  }
+  
+  refreshToken(): Observable<{access_token: string; token_type: string}> {
+    const refreshToken = localStorage.getItem('refresh_token');
+    
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+    
+    return this.http.post<{access_token: string; token_type: string}>(
+      `${this.apiUrl}/refresh`,
+      { refresh_token: refreshToken }
+    ).pipe(
+      tap(response => {
+        localStorage.setItem('access_token', response.access_token);
+      })
+    );
   }
 
   getToken(): string | null {
@@ -69,6 +97,9 @@ export class AuthService {
 
   private setSession(authResult: LoginResponse): void {
     localStorage.setItem('access_token', authResult.access_token);
+    if (authResult.refresh_token) {
+      localStorage.setItem('refresh_token', authResult.refresh_token);
+    }
     localStorage.setItem('current_user', JSON.stringify(authResult.user));
     this.currentUserSignal.set(authResult.user);
     this.isAuthenticatedSignal.set(true);

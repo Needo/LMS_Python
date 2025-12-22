@@ -1,9 +1,13 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from app.models import User
+from app.models.user import User
+from app.models.refresh_token import RefreshToken
 from app.schemas import UserCreate, UserLogin, Token
-from app.core.security import verify_password, get_password_hash, create_access_token
+from app.core.security import (
+    verify_password, get_password_hash, 
+    create_access_token, create_refresh_token
+)
 from app.core.config import settings
 import hashlib
 
@@ -54,7 +58,7 @@ class AuthService:
 
     def authenticate_user(self, login_data: UserLogin) -> Token:
         """
-        Authenticate user and return token.
+        Authenticate user and return access + refresh tokens.
         """
         user = self.db.query(User).filter(
             User.username == login_data.username
@@ -94,13 +98,23 @@ class AuthService:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": user.username}, expires_delta=access_token_expires
+        # Create tokens
+        access_token = create_access_token(data={"sub": user.username})
+        refresh_token = create_refresh_token()
+        
+        # Store refresh token in database
+        expires_at = datetime.utcnow() + timedelta(days=7)  # 7 days
+        db_refresh_token = RefreshToken(
+            token=refresh_token,
+            user_id=user.id,
+            expires_at=expires_at
         )
+        self.db.add(db_refresh_token)
+        self.db.commit()
         
         return Token(
             access_token=access_token,
+            refresh_token=refresh_token,
             token_type="bearer",
             user=user
         )
@@ -110,3 +124,74 @@ class AuthService:
         Get user by username.
         """
         return self.db.query(User).filter(User.username == username).first()
+    
+    def refresh_access_token(self, refresh_token: str) -> dict:
+        """
+        Refresh access token using refresh token.
+        """
+        # Find refresh token in database
+        db_token = self.db.query(RefreshToken).filter(
+            RefreshToken.token == refresh_token,
+            RefreshToken.revoked == False
+        ).first()
+        
+        if not db_token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token"
+            )
+        
+        # Check if expired
+        if db_token.expires_at < datetime.utcnow():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh token expired"
+            )
+        
+        # Get user
+        user = self.db.query(User).filter(User.id == db_token.user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
+        
+        # Create new access token
+        new_access_token = create_access_token(data={"sub": user.username})
+        
+        return {
+            "access_token": new_access_token,
+            "token_type": "bearer"
+        }
+    
+    def logout(self, refresh_token: str) -> bool:
+        """
+        Logout user by revoking refresh token.
+        """
+        db_token = self.db.query(RefreshToken).filter(
+            RefreshToken.token == refresh_token
+        ).first()
+        
+        if db_token:
+            db_token.revoked = True
+            self.db.commit()
+            return True
+        
+        return False
+    
+    def logout_all_sessions(self, user_id: int) -> int:
+        """
+        Logout user from all devices by revoking all refresh tokens.
+        """
+        tokens = self.db.query(RefreshToken).filter(
+            RefreshToken.user_id == user_id,
+            RefreshToken.revoked == False
+        ).all()
+        
+        count = 0
+        for token in tokens:
+            token.revoked = True
+            count += 1
+        
+        self.db.commit()
+        return count
