@@ -1,4 +1,4 @@
-from app.schemas.user import User, UserCreate, UserLogin, Token, TokenData
+from app.schemas.user import User, UserCreate, UserLogin, Token, TokenData, TokenRefresh
 from app.schemas.category import Category, CategoryCreate
 from app.schemas.course import Course, CourseCreate
 from app.schemas.file_node import FileNode, FileNodeCreate, FileNodeTree
@@ -6,7 +6,7 @@ from app.schemas.progress import UserProgress, UserProgressCreate, LastViewed, L
 from app.schemas.scanner import ScanRequest, ScanResult, RootPathRequest, RootPathResponse
 
 __all__ = [
-    "User", "UserCreate", "UserLogin", "Token", "TokenData",
+    "User", "UserCreate", "UserLogin", "Token", "TokenData", "TokenRefresh",
     "Category", "CategoryCreate",
     "Course", "CourseCreate",
     "FileNode", "FileNodeCreate", "FileNodeTree",
