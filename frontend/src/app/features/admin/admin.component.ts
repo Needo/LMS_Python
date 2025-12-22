@@ -15,6 +15,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AuthService } from '../../core/services/auth.service';
 import { ScannerService } from '../../core/services/scanner.service';
 import { BackupService, Backup, BackupStatus } from '../../core/services/backup.service';
+import { ConfigService } from '../../core/services/config.service';
 import { ScanResult } from '../../core/models/scan.model';
 import { RestoreConfirmDialogComponent } from './components/restore-confirm-dialog.component';
 import { FileSizePipe } from '../../shared/pipes/file-size.pipe';
@@ -51,11 +52,16 @@ export class AdminComponent implements OnInit {
   isBackupInProgress = signal(false);
   isRestoreInProgress = signal(false);
   backupStatus = signal<BackupStatus | null>(null);
+  
+  // Path validation signals
+  isValidatingPath = signal(false);
+  pathValidation = signal<any>(null);
 
   constructor(
     private authService: AuthService,
     private scannerService: ScannerService,
     private backupService: BackupService,
+    private configService: ConfigService,
     private router: Router,
     private snackBar: MatSnackBar,
     private dialog: MatDialog
@@ -66,6 +72,18 @@ export class AdminComponent implements OnInit {
     this.loadRootPath();
     this.loadBackups();
     this.checkBackupStatus();
+    this.loadConfig();
+  }
+
+  loadConfig(): void {
+    this.configService.loadConfig().subscribe({
+      next: () => {
+        console.log('Configuration loaded');
+      },
+      error: (error) => {
+        console.error('Error loading config:', error);
+      }
+    });
   }
 
   loadRootPath(): void {
@@ -86,13 +104,38 @@ export class AdminComponent implements OnInit {
       return;
     }
 
-    this.scannerService.setRootPath(path).subscribe({
-      next: () => {
-        this.snackBar.open('Root path saved successfully', 'Close', { duration: 3000 });
+    // Validate path first
+    this.isValidatingPath.set(true);
+    this.configService.validateRootPath(path).subscribe({
+      next: (validation) => {
+        this.isValidatingPath.set(false);
+        this.pathValidation.set(validation);
+
+        if (!validation.valid) {
+          this.snackBar.open(
+            `Invalid path: ${validation.error}`,
+            'Close',
+            { duration: 5000 }
+          );
+          return;
+        }
+
+        // Path is valid, proceed to save
+        this.scannerService.setRootPath(validation.path || path).subscribe({
+          next: () => {
+            this.snackBar.open('Root path saved successfully', 'Close', { duration: 3000 });
+            this.rootPath.set(validation.path || path);
+          },
+          error: (error) => {
+            this.snackBar.open('Error saving root path', 'Close', { duration: 3000 });
+            console.error('Error:', error);
+          }
+        });
       },
       error: (error) => {
-        this.snackBar.open('Error saving root path', 'Close', { duration: 3000 });
-        console.error('Error:', error);
+        this.isValidatingPath.set(false);
+        this.snackBar.open('Error validating path', 'Close', { duration: 3000 });
+        console.error('Validation error:', error);
       }
     });
   }

@@ -77,6 +77,46 @@ Core Philosophy:
 - Config-driven behavior
 - Admin UI validation for root path
 
+
+
+# Prompt
+I am building a small, production-ready LMS:
+
+- Frontend: Angular (latest)
+- Backend: FastAPI (Python)
+- Database: PostgreSQL
+- File storage: local filesystem
+- Auth: JWT
+
+I want **Phase 1 – Configuration & Environment Management** implemented.
+
+Requirements:
+
+1. Backend:
+   - Support dev, staging, prod environments
+   - Configurable settings: root folder path, max file size, allowed extensions, scan depth
+   - Secure secrets handling
+   - Root path validation: exists, readable, canonical
+
+2. Frontend:
+   - Admin UI validates root folder input
+   - Enforces config rules (e.g., max file size)
+
+Constraints:
+- Minimal complexity
+- Production-safe
+- Python 3.11+ / Angular latest
+- Non-enterprise
+
+Output:
+- Folder structure for environment configs
+- Sample environment files
+- FastAPI code to load configs safely per environment
+- Angular service/module for config enforcement and validation
+- Root folder validation logic
+- Copy-paste-ready code snippets only
+- Short, clear explanations if necessary
+
 ---
 
 ## PHASE 2 – Security Hardening
