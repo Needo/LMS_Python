@@ -13,15 +13,17 @@ from typing import List
 
 router = APIRouter()
 
-@router.post("/scan", response_model=ScanResult)
+@router.post("/scan")
 def scan_root_folder(
     scan_request: ScanRequest,
     request: Request,
+    background: bool = True,  # Run in background by default
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
     Scan the root folder with state management and error tracking.
+    Runs in background by default for long-running operations.
     Admin only with rate limiting.
     """
     # Check if user is admin
@@ -40,12 +42,23 @@ def scan_root_folder(
             key_prefix="scan"
         )
     
-    # Use reliable scanner with state management
+    # Use reliable scanner
     reliable_scanner = ReliableScannerService(db)
-    return reliable_scanner.scan_root_folder_reliable(
-        scan_request.root_path,
-        current_user.id
-    )
+    
+    if background:
+        # Run in background
+        result = reliable_scanner.scan_root_folder_background(
+            scan_request.root_path,
+            current_user.id
+        )
+        return result
+    else:
+        # Run synchronously (old behavior)
+        result = reliable_scanner.scan_root_folder_reliable(
+            scan_request.root_path,
+            current_user.id
+        )
+        return result
 
 @router.post("/rescan/{course_id}", response_model=ScanResult)
 def rescan_course(

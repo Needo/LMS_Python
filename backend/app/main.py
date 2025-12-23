@@ -1,15 +1,29 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.api.api import api_router
 from app.db.database import engine, Base
+from app.core.background_tasks import task_manager
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+# Lifespan context manager for startup/shutdown
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    print("Starting up LMS API...")
+    Base.metadata.create_all(bind=engine)
+    
+    yield
+    
+    # Shutdown
+    print("Shutting down LMS API...")
+    task_manager.shutdown(timeout=30)
+    print("Shutdown complete")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_PREFIX}/openapi.json"
+    openapi_url=f"{settings.API_V1_PREFIX}/openapi.json",
+    lifespan=lifespan
 )
 
 # Set up CORS

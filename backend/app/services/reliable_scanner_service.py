@@ -10,6 +10,7 @@ from app.models.scan_history import ScanHistory, ScanError, ScanLock, ScanStatus
 from app.services.scanner_service import ScannerService
 from app.schemas.scanner import ScanResult, ScanHistoryResponse, ScanStatusResponse
 from app.core.security_utils import SecurityValidator
+from app.core.background_tasks import task_manager, BackgroundTask
 
 class ReliableScannerService:
     """
@@ -96,6 +97,162 @@ class ReliableScannerService:
             self.error_count += 1
         except Exception as e:
             print(f"Error logging scan error: {e}")
+    
+    def scan_root_folder_background(self, root_path: str, user_id: int) -> dict:
+        """
+        Start scan in background thread
+        Returns task info immediately
+        """
+        # Check if scan already running
+        lock = self.db.query(ScanLock).filter(ScanLock.id == 1).first()
+        if lock and lock.is_locked:
+            return {
+                "success": False,
+                "message": "Scan already in progress",
+                "scan_id": lock.scan_id,
+                "is_background": True
+            }
+        
+        # Create scan record
+        scan = self.create_scan_record(user_id, root_path)
+        self.db.commit()
+        
+        # Submit background task
+        task_id = f"scan_{scan.id}"
+        
+        try:
+            task = task_manager.submit_task(
+                task_id=task_id,
+                task_type="folder_scan",
+                task_func=self._background_scan_worker,
+                task_args=(scan.id, root_path, user_id)
+            )
+            
+            return {
+                "success": True,
+                "message": "Scan started in background",
+                "scan_id": scan.id,
+                "task_id": task_id,
+                "is_background": True
+            }
+            
+        except ValueError as e:
+            # Task already running
+            return {
+                "success": False,
+                "message": str(e),
+                "scan_id": scan.id,
+                "is_background": True
+            }
+    
+    def _background_scan_worker(self, scan_id: int, root_path: str, user_id: int, _task: BackgroundTask = None):
+        """
+        Worker function for background scan
+        Runs in separate thread
+        """
+        # Create new DB session for this thread
+        from app.db.database import SessionLocal
+        db = SessionLocal()
+        
+        try:
+            # Re-attach to this thread's session
+            self.db = db
+            scan = db.query(ScanHistory).filter(ScanHistory.id == scan_id).first()
+            
+            if not scan:
+                raise ValueError(f"Scan {scan_id} not found")
+            
+            # Update heartbeat
+            if _task:
+                _task.update_heartbeat()
+            
+            # Acquire lock
+            success, error_msg = self.acquire_lock(user_id, scan.id)
+            if not success:
+                scan.status = ScanStatus.FAILED
+                scan.completed_at = datetime.utcnow()
+                scan.error_message = error_msg
+                db.commit()
+                return
+            
+            # Update status to running
+            scan.status = ScanStatus.RUNNING
+            db.commit()
+            
+            if _task:
+                _task.update_progress(10)
+            
+            # Validate root path
+            validation = settings.validate_root_path(root_path)
+            if not validation['valid']:
+                raise ValueError(f"Invalid root path: {validation['error']}")
+            
+            if _task:
+                _task.update_progress(20)
+            
+            # Execute scan
+            result = self._execute_scan_with_tracking(scan, root_path)
+            
+            if _task:
+                _task.update_progress(90)
+            
+            # Update scan record
+            scan.categories_found = result.categories_found
+            scan.courses_found = result.courses_found
+            scan.files_added = result.files_added
+            scan.files_updated = result.files_updated
+            scan.files_removed = result.files_removed
+            scan.errors_count = self.error_count
+            scan.completed_at = datetime.utcnow()
+            scan.message = result.message
+            
+            # Check for abort
+            if _task and _task.should_abort:
+                scan.status = ScanStatus.FAILED
+                scan.error_message = "Scan aborted by user or shutdown"
+            elif result.success:
+                if self.error_count > 0:
+                    scan.status = ScanStatus.PARTIAL
+                    scan.message = f"Scan completed with {self.error_count} errors"
+                else:
+                    scan.status = ScanStatus.COMPLETED
+            else:
+                scan.status = ScanStatus.FAILED
+                scan.error_message = result.message
+            
+            db.commit()
+            
+            if _task:
+                _task.update_progress(100)
+            
+            return result
+            
+        except Exception as e:
+            db.rollback()
+            
+            # Update scan record
+            scan = db.query(ScanHistory).filter(ScanHistory.id == scan_id).first()
+            if scan:
+                scan.status = ScanStatus.FAILED
+                scan.completed_at = datetime.utcnow()
+                scan.error_message = str(e)
+                scan.errors_count = self.error_count
+                try:
+                    db.commit()
+                except:
+                    pass
+            
+            raise
+            
+        finally:
+            # Always release lock
+            try:
+                self.release_lock()
+            except:
+                pass
+            
+            # Close session
+            db.close()
     
     def scan_root_folder_reliable(self, root_path: str, user_id: int) -> ScanResult:
         """
