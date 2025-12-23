@@ -1,13 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models import User
 from app.schemas import ScanRequest, ScanResult, RootPathRequest, RootPathResponse
+from app.schemas.scanner import ScanStatusResponse, ScanHistoryResponse
 from app.services import ScannerService
+from app.services.reliable_scanner_service import ReliableScannerService
 from app.core.dependencies import get_current_user
 from app.core.rate_limit import check_rate_limit
 from app.core.config import settings
-from fastapi import Request
+from typing import List
 
 router = APIRouter()
 
@@ -19,7 +21,7 @@ def scan_root_folder(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Scan the root folder and populate the database.
+    Scan the root folder with state management and error tracking.
     Admin only with rate limiting.
     """
     # Check if user is admin
@@ -38,8 +40,12 @@ def scan_root_folder(
             key_prefix="scan"
         )
     
-    scanner_service = ScannerService(db)
-    return scanner_service.scan_root_folder(scan_request.root_path)
+    # Use reliable scanner with state management
+    reliable_scanner = ReliableScannerService(db)
+    return reliable_scanner.scan_root_folder_reliable(
+        scan_request.root_path,
+        current_user.id
+    )
 
 @router.post("/rescan/{course_id}", response_model=ScanResult)
 def rescan_course(
@@ -53,6 +59,35 @@ def rescan_course(
     # This would be similar to scan but for a specific course
     # Implementation can be added later if needed
     raise HTTPException(status_code=501, detail="Not implemented yet")
+
+@router.get("/status", response_model=ScanStatusResponse)
+def get_scan_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get current scan status and last scan results.
+    """
+    reliable_scanner = ReliableScannerService(db)
+    return reliable_scanner.get_scan_status()
+
+@router.get("/history", response_model=List[ScanHistoryResponse])
+def get_scan_history(
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get scan history (admin only).
+    """
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Only administrators can view scan history"
+        )
+    
+    reliable_scanner = ReliableScannerService(db)
+    return reliable_scanner.get_scan_history(limit)
 
 @router.get("/root-path", response_model=RootPathResponse)
 def get_root_path(

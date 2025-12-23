@@ -2,7 +2,16 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ScanRequest, ScanResult } from '../models/scan.model';
+import { ScanRequest, ScanResult, ScanStatus, ScanHistory } from '../models/scan.model';
+
+export interface ScanStatusResponse {
+  is_scanning: boolean;
+  current_scan_id: number | null;
+  status: ScanStatus | null;
+  started_at: string | null;
+  locked_by_id: number | null;
+  last_scan: ScanHistory | null;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -23,9 +32,20 @@ export class ScannerService {
         coursesFound: response.courses_found,
         filesAdded: response.files_added,
         filesRemoved: response.files_removed,
-        filesUpdated: response.files_updated
+        filesUpdated: response.files_updated,
+        errorsCount: response.errors_count || 0,
+        scanId: response.scan_id,
+        status: response.status as ScanStatus
       }))
     );
+  }
+
+  getScanStatus(): Observable<ScanStatusResponse> {
+    return this.http.get<ScanStatusResponse>(`${this.apiUrl}/status`);
+  }
+
+  getScanHistory(limit: number = 10): Observable<ScanHistory[]> {
+    return this.http.get<ScanHistory[]>(`${this.apiUrl}/history?limit=${limit}`);
   }
 
   rescanCourse(courseId: number): Observable<ScanResult> {
@@ -37,7 +57,10 @@ export class ScannerService {
         coursesFound: response.courses_found,
         filesAdded: response.files_added,
         filesRemoved: response.files_removed,
-        filesUpdated: response.files_updated
+        filesUpdated: response.files_updated,
+        errorsCount: response.errors_count || 0,
+        scanId: response.scan_id,
+        status: response.status as ScanStatus
       }))
     );
   }

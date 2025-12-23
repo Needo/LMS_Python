@@ -1,4 +1,4 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -12,11 +12,12 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatBadgeModule } from '@angular/material/badge';
 import { AuthService } from '../../core/services/auth.service';
-import { ScannerService } from '../../core/services/scanner.service';
+import { ScannerService, ScanStatusResponse } from '../../core/services/scanner.service';
 import { BackupService, Backup, BackupStatus } from '../../core/services/backup.service';
 import { ConfigService } from '../../core/services/config.service';
-import { ScanResult } from '../../core/models/scan.model';
+import { ScanResult, ScanStatus } from '../../core/models/scan.model';
 import { RestoreConfirmDialogComponent } from './components/restore-confirm-dialog.component';
 import { FileSizePipe } from '../../shared/pipes/file-size.pipe';
 
@@ -36,16 +37,21 @@ import { FileSizePipe } from '../../shared/pipes/file-size.pipe';
     MatSnackBarModule,
     MatIconModule,
     MatDialogModule,
+    MatBadgeModule,
     FileSizePipe
   ],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.scss']
 })
-export class AdminComponent implements OnInit {
+export class AdminComponent implements OnInit, OnDestroy {
   rootPath = signal<string>('');
   isScanning = signal(false);
   scanResult = signal<ScanResult | null>(null);
+  scanStatus = signal<ScanStatusResponse | null>(null);
   currentUser: any;
+  
+  private statusPollInterval: any;
+  readonly ScanStatus = ScanStatus;
 
   // Backup-related signals
   backups = signal<Backup[]>([]);
@@ -73,6 +79,17 @@ export class AdminComponent implements OnInit {
     this.loadBackups();
     this.checkBackupStatus();
     this.loadConfig();
+    this.loadScanStatus();
+    
+    // Start polling scan status
+    this.startStatusPolling();
+  }
+  
+  ngOnDestroy(): void {
+    // Stop polling when component is destroyed
+    if (this.statusPollInterval) {
+      clearInterval(this.statusPollInterval);
+    }
   }
 
   loadConfig(): void {
@@ -154,11 +171,19 @@ export class AdminComponent implements OnInit {
       next: (result) => {
         this.isScanning.set(false);
         this.scanResult.set(result);
+        
         if (result.success) {
-          this.snackBar.open('Scan completed successfully!', 'Close', { duration: 3000 });
+          if (result.status === ScanStatus.PARTIAL) {
+            this.snackBar.open(`Scan completed with ${result.errorsCount} errors`, 'Close', { duration: 5000 });
+          } else {
+            this.snackBar.open('Scan completed successfully!', 'Close', { duration: 3000 });
+          }
         } else {
-          this.snackBar.open('Scan completed with errors', 'Close', { duration: 3000 });
+          this.snackBar.open('Scan failed', 'Close', { duration: 3000 });
         }
+        
+        // Reload scan status
+        this.loadScanStatus();
       },
       error: (error) => {
         this.isScanning.set(false);
@@ -166,6 +191,27 @@ export class AdminComponent implements OnInit {
         console.error('Scan error:', error);
       }
     });
+  }
+  
+  loadScanStatus(): void {
+    this.scannerService.getScanStatus().subscribe({
+      next: (status) => {
+        this.scanStatus.set(status);
+        this.isScanning.set(status.is_scanning);
+      },
+      error: (error) => {
+        console.error('Error loading scan status:', error);
+      }
+    });
+  }
+  
+  startStatusPolling(): void {
+    // Poll every 5 seconds if scan is running
+    this.statusPollInterval = setInterval(() => {
+      if (this.isScanning()) {
+        this.loadScanStatus();
+      }
+    }, 5000);
   }
 
   navigateToClient(): void {
