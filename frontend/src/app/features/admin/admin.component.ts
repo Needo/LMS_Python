@@ -17,6 +17,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ScannerService, ScanStatusResponse } from '../../core/services/scanner.service';
 import { BackupService, Backup, BackupStatus } from '../../core/services/backup.service';
 import { ConfigService } from '../../core/services/config.service';
+import { TreeStateService } from '../../core/services/tree-state.service';
 import { ScanResult, ScanStatus } from '../../core/models/scan.model';
 import { RestoreConfirmDialogComponent } from './components/restore-confirm-dialog.component';
 import { FileSizePipe } from '../../shared/pipes/file-size.pipe';
@@ -68,6 +69,7 @@ export class AdminComponent implements OnInit, OnDestroy {
     private scannerService: ScannerService,
     private backupService: BackupService,
     private configService: ConfigService,
+    private treeState: TreeStateService,
     private router: Router,
     private snackBar: MatSnackBar,
     private dialog: MatDialog
@@ -178,6 +180,9 @@ export class AdminComponent implements OnInit, OnDestroy {
           } else {
             this.snackBar.open('Scan completed successfully!', 'Close', { duration: 3000 });
           }
+          
+          // Request tree refresh
+          this.treeState.requestRefresh();
         } else {
           this.snackBar.open('Scan failed', 'Close', { duration: 3000 });
         }

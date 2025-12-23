@@ -10,6 +10,7 @@ import { CategoryService } from '../../core/services/category.service';
 import { CourseService } from '../../core/services/course.service';
 import { FileService } from '../../core/services/file.service';
 import { ProgressService } from '../../core/services/progress.service';
+import { TreeStateService } from '../../core/services/tree-state.service';
 import { FileNode } from '../../core/models/file.model';
 import { TreeViewComponent } from './components/tree-view.component';
 import { FileViewerComponent } from './components/file-viewer.component';
@@ -43,6 +44,7 @@ export class ClientComponent implements OnInit {
     private courseService: CourseService,
     private fileService: FileService,
     private progressService: ProgressService,
+    private treeState: TreeStateService,
     private router: Router
   ) {}
 
@@ -110,6 +112,7 @@ export class ClientComponent implements OnInit {
   }
 
   logout(): void {
+    this.treeState.clearExpansionState();
     this.authService.logout();
     this.router.navigate(['/auth/login']);
   }
