@@ -296,3 +296,11 @@ If you encounter issues:
 - [Angular Material](https://material.angular.io/)
 
 ---
+##  **Preview**
+<img width="1157" height="702" alt="image" src="https://github.com/user-attachments/assets/9f39240d-bac7-4043-b224-05ccf3b288bc" />
+<img width="1514" height="1033" alt="image" src="https://github.com/user-attachments/assets/7d73e99f-8194-4a7d-89d3-fa6f5bc1db3d" />
+<img width="1514" height="1033" alt="image" src="https://github.com/user-attachments/assets/3766da68-0b97-4eed-b88c-88bf763ee74c" />
+
+
+
+
