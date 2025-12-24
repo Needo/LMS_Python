@@ -67,6 +67,15 @@ export class TreeViewComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Check if refresh was requested BEFORE this component loaded
+    const wasRefreshRequested = this.treeState.needsRefresh();
+    
+    // If refresh was requested before we loaded, just clear it and load normally
+    // (User navigated back after scan, show normal tree with expansion)
+    if (wasRefreshRequested) {
+      this.treeState.refreshHandled();
+    }
+    
     this.loadTree();
   }
 
@@ -121,8 +130,8 @@ export class TreeViewComponent implements OnInit {
       return;
     }
     
-    // Check if children already loaded
-    if (this.treeState.areChildrenLoaded(node.type, node.id)) {
+    // Check if children already loaded AND node actually has children
+    if (this.treeState.areChildrenLoaded(node.type, node.id) && node.children.value.length > 0) {
       return;
     }
     
@@ -280,19 +289,29 @@ export class TreeViewComponent implements OnInit {
   }
   
   private refreshTree(): void {
+    console.log('Refreshing tree after scan...');
+    
     // Save current selection
     const currentSelection = this.selectedNodeId();
     
-    // Clear children loaded flags
+    // Clear children loaded flags (force reload)
     this.treeState.clearChildrenLoadedFlags();
     
-    // Reload tree
-    this.loadTree();
+    // Clear existing root nodes to force complete reload
+    this.rootNodes.next([]);
     
-    // Restore selection if still valid
-    if (currentSelection) {
-      this.selectedNodeId.set(currentSelection);
-    }
+    // Small delay before reloading to ensure cleanup
+    setTimeout(() => {
+      // Reload tree
+      this.loadTree();
+      
+      // Restore selection if still valid
+      if (currentSelection) {
+        setTimeout(() => {
+          this.selectedNodeId.set(currentSelection);
+        }, 500);
+      }
+    }, 100);
     
     // Mark refresh as handled
     this.treeState.refreshHandled();
@@ -302,30 +321,45 @@ export class TreeViewComponent implements OnInit {
     // Get expanded node keys from state
     const expandedKeys = this.treeState.getExpandedNodeKeys();
     
-    // For each expanded key, find the node and expand it
-    expandedKeys.forEach(key => {
+    // Sort keys by hierarchy level (categories first, then courses, then folders)
+    const sortedKeys = expandedKeys.sort((a, b) => {
+      const [typeA] = a.split('-');
+      const [typeB] = b.split('-');
+      
+      const order: { [key: string]: number } = { 'category': 1, 'course': 2, 'folder': 3 };
+      return (order[typeA] || 999) - (order[typeB] || 999);
+    });
+    
+    // Restore expansion in sequence with delays
+    let delay = 0;
+    sortedKeys.forEach((key, index) => {
       const [type, idStr] = key.split('-');
       const id = parseInt(idStr);
       
-      // Find node in tree and expand
-      const node = this.findNodeById(type, id);
-      if (node) {
-        this.expandNode(node);
-      }
+      setTimeout(() => {
+        const node = this.findNodeById(type, id);
+        if (node) {
+          this.expandNode(node);
+        }
+      }, delay);
+      
+      // Add delay between expansions to allow API calls to complete
+      delay += 150;
     });
   }
   
   private findNodeById(type: string, id: number): TreeNode | null {
-    // Search in root nodes
+    // Only search in currently loaded nodes
     const searchInNodes = (nodes: TreeNode[]): TreeNode | null => {
       for (const node of nodes) {
         if (node.type === type && node.id === id) {
           return node;
         }
         
-        // Search in children
+        // Only search in children if they're already loaded
+        // Don't try to search in unloaded children
         const children = node.children.value;
-        if (children.length > 0) {
+        if (children && children.length > 0) {
           const found = searchInNodes(children);
           if (found) return found;
         }
