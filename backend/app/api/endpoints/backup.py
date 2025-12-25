@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List
 import os
+import shutil
+from datetime import datetime
 from app.db.database import get_db
 from app.core.dependencies import get_current_user
 from app.core.rate_limit import check_rate_limit
@@ -197,3 +199,67 @@ def get_backup_status(
         )
     
     return BackupStatusResponse(is_locked=False)
+
+@router.post("/upload")
+async def upload_backup(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_active_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Upload a backup file for later restoration.
+    Admin only.
+    """
+    # Validate file extension
+    if not file.filename.endswith('.sql'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only .sql files are allowed"
+        )
+    
+    try:
+        # Save to backups directory
+        backup_dir = settings.BACKUP_DIR
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        # Generate unique filename with timestamp
+        timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        filename = f"uploaded_{timestamp}_{file.filename}"
+        file_path = os.path.join(backup_dir, filename)
+        
+        # Save file
+        with open(file_path, 'wb') as f:
+            shutil.copyfileobj(file.file, f)
+        
+        # Get file size
+        file_size = os.path.getsize(file_path)
+        
+        # Create backup record
+        from app.models.backup import BackupHistory
+        backup = BackupHistory(
+            filename=filename,
+            file_path=file_path,
+            file_size=file_size,
+            backup_type='manual',
+            created_by_id=current_user.id,
+            status='uploaded',
+            notes='Uploaded via admin panel'
+        )
+        
+        db.add(backup)
+        db.commit()
+        db.refresh(backup)
+        
+        return {
+            "success": True,
+            "backup_id": backup.id,
+            "filename": filename,
+            "file_size": file_size,
+            "message": "Backup uploaded successfully"
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload backup: {str(e)}"
+        )

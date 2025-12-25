@@ -5,18 +5,22 @@ from app.db.database import get_db
 from app.models import Category as CategoryModel, User
 from app.schemas import Category
 from app.core.dependencies import get_current_user
+from app.core.authorization import get_auth_service
+from app.services.authorization_service import AuthorizationService
 
 router = APIRouter()
 
 @router.get("/", response_model=List[Category])
 def get_categories(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    auth_service: AuthorizationService = Depends(get_auth_service)
 ):
     """
-    Get all categories.
+    Get categories accessible to current user.
+    Admin sees all, regular users see only categories with enrolled courses.
     """
-    categories = db.query(CategoryModel).all()
+    categories = auth_service.get_accessible_categories(current_user)
     return categories
 
 @router.get("/{category_id}", response_model=Category)

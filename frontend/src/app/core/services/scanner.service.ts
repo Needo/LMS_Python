@@ -78,4 +78,12 @@ export class ScannerService {
       root_path: rootPath
     });
   }
+
+  getScanLogs(scanId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/logs/${scanId}`);
+  }
+
+  cleanupOrphanedEntries(): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/cleanup`, {});
+  }
 }

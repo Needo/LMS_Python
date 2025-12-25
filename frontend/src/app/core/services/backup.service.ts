@@ -62,4 +62,10 @@ export class BackupService {
   getStatus(): Observable<BackupStatus> {
     return this.http.get<BackupStatus>(`${this.apiUrl}/status`);
   }
+
+  uploadBackup(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.apiUrl}/upload`, formData);
+  }
 }

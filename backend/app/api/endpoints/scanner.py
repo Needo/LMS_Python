@@ -68,10 +68,25 @@ def rescan_course(
 ):
     """
     Rescan a specific course.
+    Admin only.
     """
-    # This would be similar to scan but for a specific course
-    # Implementation can be added later if needed
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Only administrators can scan courses"
+        )
+    
+    # Get course to validate it exists
+    from app.models.course import Course
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    # Use regular scanner for single course
+    scanner_service = ScannerService(db)
+    result = scanner_service.scan_course(course_id)
+    
+    return result
 
 @router.get("/status", response_model=ScanStatusResponse)
 def get_scan_status(
@@ -130,3 +145,66 @@ def set_root_path(
         return {"success": True}
     else:
         raise HTTPException(status_code=500, detail="Failed to set root path")
+
+@router.get("/logs/{scan_id}")
+def get_scan_logs(
+    scan_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get detailed logs for a specific scan.
+    Admin only.
+    """
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Only administrators can view scan logs"
+        )
+    
+    from app.models.scan_history import ScanError
+    
+    # Get scan errors
+    errors = db.query(ScanError).filter(
+        ScanError.scan_id == scan_id
+    ).order_by(ScanError.occurred_at.desc()).all()
+    
+    return {
+        "scan_id": scan_id,
+        "errors": [
+            {
+                "id": e.id,
+                "path": e.path,
+                "error_type": e.error_type,
+                "error_message": e.error_message,
+                "occurred_at": e.occurred_at.isoformat()
+            }
+            for e in errors
+        ]
+    }
+
+@router.post("/cleanup")
+def cleanup_orphaned_entries(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Clean up orphaned database entries (files that no longer exist on disk).
+    Admin only.
+    """
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Only administrators can cleanup database"
+        )
+    
+    from app.services.cleanup_service import CleanupService
+    
+    cleanup_service = CleanupService(db)
+    result = cleanup_service.cleanup_orphan_files()
+    
+    return {
+        "success": True,
+        "files_removed": result["removed_count"],
+        "message": result["message"]
+    }

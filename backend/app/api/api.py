@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.endpoints import auth, categories, courses, files, progress, scanner, backup, config
+from app.api.endpoints import auth, categories, courses, files, progress, scanner, backup, config, enrollments
 
 api_router = APIRouter()
 
@@ -8,6 +8,7 @@ api_router.include_router(categories.router, prefix="/categories", tags=["catego
 api_router.include_router(courses.router, prefix="/courses", tags=["courses"])
 api_router.include_router(files.router, prefix="/files", tags=["files"])
 api_router.include_router(progress.router, prefix="/progress", tags=["progress"])
+api_router.include_router(enrollments.router, prefix="/enrollments", tags=["enrollments"])
 api_router.include_router(scanner.router, prefix="/scanner", tags=["scanner"])
 api_router.include_router(backup.router, prefix="/admin/backup", tags=["backup"])
 api_router.include_router(config.router, prefix="/config", tags=["configuration"])
