@@ -1,11 +1,11 @@
-import { Component, signal, Input, Output, EventEmitter } from '@angular/core';
+import { Component, signal, Input, Output, EventEmitter, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
-import { SearchResultItem } from '../../../core/services/search-state.service';
-import { FileSizePipe } from '../../pipes/file-size.pipe';
+import { SearchResultItem } from '../../core/services/search-state.service';
+import { FileSizePipe } from '../pipes/file-size.pipe';
 
 @Component({
   selector: 'app-search-results-grid',

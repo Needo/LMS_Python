@@ -1,5 +1,4 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
 
 export interface SearchState {
   query: string;

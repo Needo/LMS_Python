@@ -1,4 +1,4 @@
-import { Component, signal, OnInit, computed, HostListener } from '@angular/core';
+import { Component, signal, OnInit, computed, HostListener, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -17,7 +17,7 @@ import { FileService } from '../../core/services/file.service';
 import { ProgressService } from '../../core/services/progress.service';
 import { TreeStateService } from '../../core/services/tree-state.service';
 import { SearchService } from '../../core/services/search.service';
-import { SearchStateService } from '../../core/services/search-state.service';
+import { SearchStateService, SearchResultItem } from '../../core/services/search-state.service';
 import { FileNode } from '../../core/models/file.model';
 import { TreeViewComponent } from './components/tree-view.component';
 import { FileViewerComponent } from './components/file-viewer.component';
@@ -56,10 +56,10 @@ export class ClientComponent implements OnInit {
   isSearching = signal(false);
   private searchSubject = new Subject<string>();
   
-  // View mode from search state
-  currentView = this.searchState.currentView;
-  searchResults = this.searchState.results;
-  searchQueryText = this.searchState.query;
+  // View mode from search state - initialized in constructor
+  currentView!: Signal<'tree' | 'search'>;
+  searchResults!: Signal<SearchResultItem[]>;
+  searchQueryText!: Signal<string>;
   
   leftPanelWidth = signal(300);
   isResizing = signal(false);
@@ -75,6 +75,11 @@ export class ClientComponent implements OnInit {
     private searchState: SearchStateService,
     private router: Router
   ) {
+    // Initialize search state references
+    this.currentView = this.searchState.currentView;
+    this.searchResults = this.searchState.results;
+    this.searchQueryText = this.searchState.query;
+    
     // Setup search debounce
     this.searchSubject.pipe(
       debounceTime(400)
