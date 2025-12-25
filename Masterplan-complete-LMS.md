@@ -292,6 +292,53 @@ Output:
 - Clear recovery documentation
 
 ---
+## PHASE 13 – Discovery, Search & Notifications
+
+### Backend
+- Unified search:
+  - Courses
+  - Files (name, path, type)
+- Announcement support:
+  - Course announcements
+  - New course / new content updates
+- Notification feed API:
+  - Time-ordered updates
+  - Lightweight read / unread tracking (optional)
+
+### Frontend
+- Global search (courses + files)
+- Notification bell icon in top navigation
+- Notification panel showing:
+  - New courses
+  - New files
+  - Course announcements
+- Click-through navigation from notification to content
+- Simple visual indicators for new updates
+
+
+## PHASE 14 – Dockerized Deployment
+
+### Container Strategy
+- Single Docker image including:
+  - FastAPI backend
+  - Angular frontend (production build)
+  - All required dependencies
+- Configuration via environment variables
+
+### Filesystem Handling
+- Configurable courses root path:
+  - Inside container
+  - OR external host path (bind mount)
+- Support large content libraries via volumes
+
+### Deployment
+- Pull source from GitHub
+- Build and run with Docker
+- One-command launch (`docker run` or `docker-compose`)
+- Clear documentation for:
+  - Volume mounting
+  - Path configuration
+--
 
 ## Optional Future Enhancements
 

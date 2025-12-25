@@ -1,11 +1,19 @@
-<div class="tree-container">
-  <!-- Loading spinner -->
-  <div *ngIf="isLoading()" class="loading-container">
-    <mat-spinner diameter="40"></mat-spinner>
-  </div>
+<div class="tree-container" role="tree" aria-label="Course navigation tree">
+  <!-- Skeleton loader -->
+  <app-skeleton-loader *ngIf="isLoading()" type="tree"></app-skeleton-loader>
+  
+  <!-- Error state -->
+  <app-error-state 
+    *ngIf="loadError()"
+    [title]="'Failed to load courses'"
+    [message]="loadError()!"
+    [showRetry]="true"
+    [onRetryFn]="loadTree.bind(this)">
+  </app-error-state>
 
   <!-- Use cdk-tree with childrenAccessor (Angular 18+) -->
   <cdk-tree 
+    *ngIf="!isLoading() && !loadError()"
     [dataSource]="rootNodes" 
     [childrenAccessor]="childrenAccessor"
     [trackBy]="trackByNode"
@@ -16,7 +24,11 @@
       *cdkTreeNodeDef="let node; when: hasChild"
       (expandedChange)="handleNodeExpansion($event, node)">
       
-      <div class="mat-tree-node" [class]="getNodeClass(node)">
+      <div class="mat-tree-node" 
+           [class]="getNodeClass(node)"
+           role="treeitem"
+           [attr.aria-expanded]="tree.isExpanded(node)"
+           [attr.aria-label]="node.type + ': ' + node.name">
         <!-- Toggle button -->
         <button mat-icon-button 
                 cdkTreeNodeToggle

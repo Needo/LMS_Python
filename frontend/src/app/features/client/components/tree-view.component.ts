@@ -10,6 +10,8 @@ import { CourseService } from '../../../core/services/course.service';
 import { FileService } from '../../../core/services/file.service';
 import { FileNode, FileType } from '../../../core/models/file.model';
 import { TreeStateService } from '../../../core/services/tree-state.service';
+import { SkeletonLoaderComponent } from '../../../shared/components/skeleton-loader.component';
+import { ErrorStateComponent } from '../../../shared/components/error-state.component';
 
 // TreeNode with BehaviorSubject for children (required for Angular 18+)
 class TreeNode {
@@ -35,7 +37,9 @@ class TreeNode {
     CdkTreeModule,
     MatIconModule,
     MatButtonModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    SkeletonLoaderComponent,
+    ErrorStateComponent
   ],
   templateUrl: './tree-view.component.html',
   styleUrls: ['./tree-view.component.scss']
@@ -51,6 +55,7 @@ export class TreeViewComponent implements OnInit {
   
   isLoading = signal(false);
   selectedNodeId = signal<number | null>(null);
+  loadError = signal<string | null>(null);
 
   constructor(
     private categoryService: CategoryService,
@@ -87,6 +92,7 @@ export class TreeViewComponent implements OnInit {
 
   loadTree(): void {
     this.isLoading.set(true);
+    this.loadError.set(null);
     
     this.categoryService.getCategories().subscribe({
       next: (categories) => {
@@ -107,6 +113,7 @@ export class TreeViewComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading categories:', error);
+        this.loadError.set('Failed to load categories. Please try again.');
         this.isLoading.set(false);
       }
     });

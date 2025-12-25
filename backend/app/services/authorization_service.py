@@ -108,16 +108,17 @@ class AuthorizationService:
         """
         # Admin gets all categories
         if user.is_admin:
-            return self.db.query(Category).all()
+            return self.db.query(Category).order_by(Category.name).all()
         
-        # Regular user gets categories where they're enrolled in at least one course
+        # Optimized query with JOIN and DISTINCT
+        # Prevents N+1 queries by loading categories with enrollments in one go
         categories = self.db.query(Category).join(
             Course, Category.id == Course.category_id
         ).join(
             Enrollment, Course.id == Enrollment.course_id
         ).filter(
             Enrollment.user_id == user.id
-        ).distinct().all()
+        ).distinct().order_by(Category.name).all()
         
         return categories
     
@@ -133,17 +134,18 @@ class AuthorizationService:
         """
         # Admin gets all courses
         if user.is_admin:
-            query = self.db.query(Course)
+            query = self.db.query(Course).order_by(Course.name)
             if category_id:
                 query = query.filter(Course.category_id == category_id)
             return query.all()
         
-        # Regular user gets enrolled courses
+        # Optimized query for regular users
+        # Single query with JOIN instead of separate queries per course
         query = self.db.query(Course).join(
             Enrollment, Course.id == Enrollment.course_id
         ).filter(
             Enrollment.user_id == user.id
-        )
+        ).order_by(Course.name)
         
         if category_id:
             query = query.filter(Course.category_id == category_id)
