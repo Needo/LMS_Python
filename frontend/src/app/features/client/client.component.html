@@ -1,43 +1,107 @@
-<div class="full-height" 
-     (mousemove)="onMouseMove($event)" 
-     (mouseup)="onMouseUp()">
-  <mat-toolbar class="app-toolbar">
-    <span>Learning Management System</span>
+<div class="client-container">
+  <!-- Toolbar with Search -->
+  <mat-toolbar color="primary" class="app-toolbar">
+    <span class="logo">LMS</span>
+    
+    <!-- Search Bar -->
+    <div class="search-container">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-icon matPrefix>search</mat-icon>
+        <input 
+          matInput 
+          [(ngModel)]="searchQuery"
+          (input)="onSearchChange()"
+          placeholder="Search courses and files..."
+          [attr.aria-label]="'Global search'">
+        <mat-spinner 
+          *ngIf="isSearching()" 
+          matSuffix 
+          diameter="20">
+        </mat-spinner>
+        <button 
+          *ngIf="searchQuery && !isSearching()" 
+          matSuffix 
+          mat-icon-button 
+          (click)="closeSearch()"
+          aria-label="Clear search">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+    </div>
+
     <span class="toolbar-spacer"></span>
-    <span class="user-info">{{ currentUser()?.username }}</span>
-    @if (currentUser()?.isAdmin) {
-      <button mat-button (click)="navigateToAdmin()">
-        <mat-icon>admin_panel_settings</mat-icon>
-        Admin Panel
-      </button>
-    }
-    <button mat-button (click)="logout()">
-      <mat-icon>logout</mat-icon>
-      Logout
+
+    <!-- Return to Search Button -->
+    <button 
+      *ngIf="canReturnToSearch()"
+      mat-button
+      (click)="returnToSearch()"
+      class="return-search-btn">
+      <mat-icon>arrow_back</mat-icon>
+      <span class="btn-text">Back to Search</span>
     </button>
+
+    <!-- User Info and Menu -->
+    <button mat-icon-button [matMenuTriggerFor]="userMenu">
+      <mat-icon>account_circle</mat-icon>
+    </button>
+    <mat-menu #userMenu="matMenu">
+      <div class="menu-header" mat-menu-item disabled>
+        <mat-icon>person</mat-icon>
+        <span>{{ currentUser()?.username }}</span>
+      </div>
+      <mat-divider></mat-divider>
+      <button *ngIf="currentUser()?.isAdmin" mat-menu-item (click)="navigateToAdmin()">
+        <mat-icon>admin_panel_settings</mat-icon>
+        <span>Admin Panel</span>
+      </button>
+      <button mat-menu-item (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Logout</span>
+      </button>
+    </mat-menu>
   </mat-toolbar>
 
-  <div class="content-container">
-    <div class="left-panel panel" [style.width.px]="leftPanelWidth()">
-      <app-tree-view 
-        (fileSelected)="onFileSelected($event)">
-      </app-tree-view>
+  <!-- Main Content Area -->
+  <div class="content-area">
+    
+    <!-- SEARCH VIEW: Show search results grid -->
+    <div *ngIf="currentView() === 'search'" class="search-view">
+      <app-search-results-grid
+        [query]="searchQueryText"
+        [results]="searchResults"
+        (selectItem)="onSearchItemSelect($event)"
+        (closeSearch)="closeSearch()">
+      </app-search-results-grid>
     </div>
 
-    <div class="resizer" 
-         (mousedown)="onMouseDown($event)"
-         [class.resizing]="isResizing()">
+    <!-- TREE VIEW: Show tree + viewer -->
+    <div *ngIf="currentView() === 'tree'" class="tree-view">
+      <!-- Left Panel: Tree -->
+      <div class="left-panel" [style.width.px]="leftPanelWidth()">
+        <app-tree-view 
+          (fileSelected)="onFileSelected($event)">
+        </app-tree-view>
+      </div>
+
+      <!-- Resizer -->
+      <div class="resizer"
+           (mousedown)="onMouseDown($event)"
+           [class.resizing]="isResizing()">
+      </div>
+
+      <!-- Right Panel: File Viewer -->
+      <div class="right-panel">
+        @if (selectedFile()) {
+          <app-file-viewer [file]="selectedFile()!"></app-file-viewer>
+        } @else {
+          <div class="empty-state">
+            <mat-icon>folder_open</mat-icon>
+            <p>Select a file from the tree to view</p>
+          </div>
+        }
+      </div>
     </div>
 
-    <div class="right-panel panel">
-      @if (selectedFile()) {
-        <app-file-viewer [file]="selectedFile()!"></app-file-viewer>
-      } @else {
-        <div class="empty-state">
-          <mat-icon>folder_open</mat-icon>
-          <p>Select a file from the tree to view</p>
-        </div>
-      }
-    </div>
   </div>
 </div>
