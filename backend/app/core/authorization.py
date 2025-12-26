@@ -4,7 +4,7 @@ Authorization dependencies for FastAPI
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.database import get_db
-from app.core.auth import get_current_user
+from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.services.authorization_service import AuthorizationService
 

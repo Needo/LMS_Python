@@ -134,7 +134,7 @@ class SearchService:
                 'path': file.path,
                 'course_id': file.course_id,
                 'file_type': self._get_file_type(file.name),
-                'file_size': file.file_size,
+                'file_size': file.size,
                 'type': 'file',
                 'icon': self._get_file_icon(file.name)
             }

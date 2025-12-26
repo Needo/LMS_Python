@@ -1,7 +1,7 @@
 """
 Search and notification models
 """
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.db.database import Base
@@ -20,7 +20,7 @@ class Announcement(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
-    announcement_type = Column(String(50), default=AnnouncementType.COURSE_ANNOUNCEMENT, nullable=False)
+    announcement_type = Column(String(50), default='course_announcement', nullable=False)
     
     # For course-specific announcements
     course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=True, index=True)
@@ -33,7 +33,7 @@ class Announcement(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     
     # Priority for sorting
-    priority = Column(Integer, default=0)  # Higher = more important
+    priority = Column(Integer, default=0)
     
     # Expiration (optional)
     expires_at = Column(DateTime, nullable=True)
@@ -70,7 +70,7 @@ class SearchLog(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     query = Column(String(255), nullable=False, index=True)
     results_count = Column(Integer, default=0)
-    search_type = Column(String(50))  # 'courses', 'files', 'all'
+    search_type = Column(String(50))
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     
     # Relationships
