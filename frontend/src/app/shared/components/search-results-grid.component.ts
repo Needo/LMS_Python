@@ -101,22 +101,16 @@ import { FileSizePipe } from '../pipes/file-size.pipe';
 
           <!-- Action Column -->
           <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>Action</th>
+            <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let item">
-              <button 
-                mat-raised-button 
-                color="primary"
-                (click)="onSelectItem(item)"
-                [attr.aria-label]="'Open ' + item.name">
-                <mat-icon>{{ item.type === 'course' ? 'school' : 'launch' }}</mat-icon>
-                {{ item.type === 'course' ? 'View' : 'Open' }}
-              </button>
+              <mat-icon class="action-icon">arrow_forward</mat-icon>
             </td>
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
               class="result-row"
+              (click)="onSelectItem(row)"
               [class.course-row]="row.type === 'course'"
               [class.file-row]="row.type === 'file'"></tr>
         </table>
@@ -244,11 +238,17 @@ import { FileSizePipe } from '../pipes/file-size.pipe';
 
     /* Row Styles */
     .result-row {
-      transition: background 0.2s;
+      transition: background 0.2s, transform 0.1s;
+      cursor: pointer;
     }
 
     .result-row:hover {
       background: #f5f5f5;
+      transform: scale(1.01);
+    }
+
+    .result-row:active {
+      transform: scale(0.99);
     }
 
     .course-row {
@@ -257,6 +257,16 @@ import { FileSizePipe } from '../pipes/file-size.pipe';
 
     .file-row {
       border-left: 3px solid #4caf50;
+    }
+
+    .action-icon {
+      color: rgba(0,0,0,0.4);
+      transition: color 0.2s, transform 0.2s;
+    }
+
+    .result-row:hover .action-icon {
+      color: #1976d2;
+      transform: translateX(4px);
     }
 
     /* No Results */
