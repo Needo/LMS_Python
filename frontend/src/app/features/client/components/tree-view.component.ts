@@ -46,6 +46,7 @@ class TreeNode {
 })
 export class TreeViewComponent implements OnInit {
   @Output() fileSelected = new EventEmitter<FileNode>();
+  @Output() folderSelected = new EventEmitter<{ folderId: number; folderName: string }>();
 
   // No more TreeControl! Use childrenAccessor instead
   childrenAccessor = (node: TreeNode) => node.children.asObservable();
@@ -244,7 +245,7 @@ export class TreeViewComponent implements OnInit {
   }
 
   onNodeClick(node: TreeNode): void {
-    // Only handle file clicks (not folders)
+    // Handle file clicks
     if (node.type === 'file' && node.fileData) {
       this.selectedNodeId.set(node.id);
       
@@ -256,6 +257,19 @@ export class TreeViewComponent implements OnInit {
       });
       
       this.fileSelected.emit(node.fileData);
+    }
+    // Handle folder clicks - show folder contents
+    else if (node.type === 'folder') {
+      this.selectedNodeId.set(node.id);
+      
+      // Update state service
+      this.treeState.selectNode({
+        id: node.id,
+        type: 'folder',
+        name: node.name
+      });
+      
+      this.folderSelected.emit({ folderId: node.id, folderName: node.name });
     }
   }
 

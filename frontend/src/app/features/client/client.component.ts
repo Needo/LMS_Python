@@ -21,6 +21,7 @@ import { SearchStateService, SearchResultItem } from '../../core/services/search
 import { FileNode } from '../../core/models/file.model';
 import { TreeViewComponent } from './components/tree-view.component';
 import { FileViewerComponent } from './components/file-viewer.component';
+import { FolderViewerComponent } from './components/folder-viewer.component';
 import { SearchResultsGridComponent } from '../../shared/components/search-results-grid.component';
 import { Subject } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
@@ -41,6 +42,7 @@ import { debounceTime } from 'rxjs/operators';
     MatDividerModule,
     TreeViewComponent,
     FileViewerComponent,
+    FolderViewerComponent,
     SearchResultsGridComponent
   ],
   templateUrl: './client.component.html',
@@ -49,6 +51,8 @@ import { debounceTime } from 'rxjs/operators';
 export class ClientComponent implements OnInit {
   currentUser: any;
   selectedFile = signal<FileNode | null>(null);
+  selectedFolder = signal<{ folderId: number; folderName: string } | null>(null);
+  viewMode = signal<'file' | 'folder' | 'empty'>('empty');
   isLoading = signal(false);
   
   // Search
@@ -123,6 +127,8 @@ export class ClientComponent implements OnInit {
 
   onFileSelected(file: FileNode): void {
     this.selectedFile.set(file);
+    this.selectedFolder.set(null);
+    this.viewMode.set('file');
     
     const user = this.currentUser();
     if (user && file.courseId) {
@@ -132,6 +138,12 @@ export class ClientComponent implements OnInit {
         }
       });
     }
+  }
+
+  onFolderSelected(folder: { folderId: number; folderName: string }): void {
+    this.selectedFolder.set(folder);
+    this.selectedFile.set(null);
+    this.viewMode.set('folder');
   }
 
   onMouseDown(event: MouseEvent): void {

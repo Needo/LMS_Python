@@ -80,7 +80,8 @@
       <!-- Left Panel: Tree -->
       <div class="left-panel" [style.width.px]="leftPanelWidth()">
         <app-tree-view 
-          (fileSelected)="onFileSelected($event)">
+          (fileSelected)="onFileSelected($event)"
+          (folderSelected)="onFolderSelected($event)">
         </app-tree-view>
       </div>
 
@@ -90,7 +91,7 @@
            [class.resizing]="isResizing()">
       </div>
 
-      <!-- Right Panel: File Viewer -->
+      <!-- Right Panel: File/Folder Viewer -->
       <div class="right-panel">
         <!-- Overlay to block iframe events during resize -->
         <div class="resize-overlay" 
@@ -98,12 +99,19 @@
              (mouseup)="forceStopResize()"
              (click)="forceStopResize()"></div>
         
-        @if (selectedFile()) {
+        @if (viewMode() === 'file' && selectedFile()) {
           <app-file-viewer [file]="selectedFile()!"></app-file-viewer>
+        } @else if (viewMode() === 'folder' && selectedFolder()) {
+          <app-folder-viewer 
+            [folderId]="selectedFolder()!.folderId"
+            [folderName]="selectedFolder()!.folderName"
+            (fileSelected)="onFileSelected($event)"
+            (folderSelected)="onFolderSelected($event)">
+          </app-folder-viewer>
         } @else {
           <div class="empty-state">
             <mat-icon>folder_open</mat-icon>
-            <p>Select a file from the tree to view</p>
+            <p>Select a file or folder from the tree to view</p>
           </div>
         }
       </div>
