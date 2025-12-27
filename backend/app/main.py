@@ -29,8 +29,14 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     logger.info("Shutting down LMS API...", extra={'event': 'shutdown'})
-    task_manager.shutdown(timeout=30)
-    logger.info("Shutdown complete", extra={'event': 'shutdown_complete'})
+    try:
+        task_manager.shutdown(timeout=10)  # Reduced timeout
+        logger.info("Shutdown complete", extra={'event': 'shutdown_complete'})
+    except Exception as e:
+        logger.error(f"Error during shutdown: {e}", extra={'event': 'shutdown_error'})
+        # Force exit after logging error
+        import os
+        os._exit(0)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

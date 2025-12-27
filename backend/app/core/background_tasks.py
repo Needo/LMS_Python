@@ -87,7 +87,26 @@ class BackgroundTaskManager:
     def _signal_handler(self, signum, frame):
         """Handle shutdown signals"""
         print(f"\nReceived signal {signum}. Initiating graceful shutdown...")
-        self.shutdown()
+        
+        # Set a hard timeout to force exit
+        def force_exit():
+            time.sleep(15)  # Give 15 seconds total
+            print("\nForced shutdown after timeout")
+            import os
+            os._exit(1)
+        
+        force_exit_thread = threading.Thread(target=force_exit, daemon=True)
+        force_exit_thread.start()
+        
+        # Try graceful shutdown
+        try:
+            self.shutdown(timeout=10)
+            print("\nGraceful shutdown successful, exiting...")
+        except Exception as e:
+            print(f"\nShutdown error: {e}, forcing exit...")
+        finally:
+            import os
+            os._exit(0)
     
     def _start_monitor(self):
         """Start monitoring thread for heartbeats"""
@@ -251,15 +270,17 @@ class BackgroundTaskManager:
                     break
                 
                 if task.thread:
-                    task.thread.join(timeout=remaining)
+                    task.thread.join(timeout=min(remaining, 5))  # Max 5 sec per task
                     if task.thread.is_alive():
-                        print(f"Task {task.task_id} did not complete in time")
+                        print(f"Task {task.task_id} still running, forcing shutdown")
                     else:
                         print(f"Task {task.task_id} completed")
         
-        # Stop monitor thread
-        if self.monitor_thread:
-            self.monitor_thread.join(timeout=5)
+        # Stop monitor thread with short timeout
+        if self.monitor_thread and self.monitor_thread.is_alive():
+            self.monitor_thread.join(timeout=2)
+            if self.monitor_thread.is_alive():
+                print("Monitor thread still running after timeout")
         
         print("Background task manager shutdown complete")
     
