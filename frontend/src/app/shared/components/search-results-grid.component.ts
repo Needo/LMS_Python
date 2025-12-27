@@ -126,48 +126,63 @@ import { FileSizePipe } from '../pipes/file-size.pipe';
   `,
   styles: [`
     .search-results-container {
-      padding: 24px;
+      padding: 16px;
       max-width: 1400px;
       margin: 0 auto;
     }
 
     .results-header {
-      margin-bottom: 32px;
+      margin-bottom: 12px;
     }
 
     .header-content {
       display: flex;
       align-items: center;
-      gap: 16px;
-      margin-bottom: 16px;
+      gap: 8px;
+      margin-bottom: 8px;
     }
 
     .header-content mat-icon {
-      font-size: 32px;
-      width: 32px;
-      height: 32px;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
       color: #1976d2;
     }
 
     .header-content h2 {
       flex: 1;
       margin: 0;
-      font-size: 24px;
+      font-size: 16px;
       font-weight: 500;
+    }
+
+    .header-content button {
+      width: 32px;
+      height: 32px;
     }
 
     .results-info {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 16px;
+      padding: 6px 10px;
       background: #f5f5f5;
-      border-radius: 8px;
+      border-radius: 4px;
     }
 
     .results-info span {
-      font-size: 14px;
+      font-size: 12px;
       color: rgba(0,0,0,0.6);
+    }
+
+    ::ng-deep .results-info mat-chip-set {
+      margin: 0;
+    }
+
+    ::ng-deep .results-info mat-chip {
+      min-height: 24px !important;
+      font-size: 12px !important;
+      padding: 4px 8px !important;
     }
 
     /* Table Container */
