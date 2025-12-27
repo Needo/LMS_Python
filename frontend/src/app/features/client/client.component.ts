@@ -137,6 +137,7 @@ export class ClientComponent implements OnInit {
   onMouseDown(event: MouseEvent): void {
     this.isResizing.set(true);
     event.preventDefault();
+    event.stopPropagation();
   }
 
   onMouseMove(event: MouseEvent): void {
@@ -145,10 +146,17 @@ export class ClientComponent implements OnInit {
       if (newWidth >= 200 && newWidth <= 600) {
         this.leftPanelWidth.set(newWidth);
       }
+      event.preventDefault();
     }
   }
 
   onMouseUp(): void {
+    if (this.isResizing()) {
+      this.isResizing.set(false);
+    }
+  }
+
+  forceStopResize(): void {
     this.isResizing.set(false);
   }
 
@@ -218,17 +226,27 @@ export class ClientComponent implements OnInit {
     return this.searchState.isSearchActive() && this.currentView() === 'tree';
   }
 
-  @HostListener('document:mousemove', ['$event'])
+  @HostListener('window:mousemove', ['$event'])
   onDocumentMouseMove(event: MouseEvent): void {
     if (this.isResizing()) {
       this.onMouseMove(event);
     }
   }
 
-  @HostListener('document:mouseup')
-  onDocumentMouseUp(): void {
+  @HostListener('window:mouseup', ['$event'])
+  onDocumentMouseUp(event: MouseEvent): void {
     if (this.isResizing()) {
-      this.onMouseUp();
+      this.isResizing.set(false);
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+
+  @HostListener('window:blur')
+  onWindowBlur(): void {
+    // Stop resizing if window loses focus (e.g., clicking on iframe)
+    if (this.isResizing()) {
+      this.isResizing.set(false);
     }
   }
 }

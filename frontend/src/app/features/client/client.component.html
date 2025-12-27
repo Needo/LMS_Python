@@ -92,6 +92,12 @@
 
       <!-- Right Panel: File Viewer -->
       <div class="right-panel">
+        <!-- Overlay to block iframe events during resize -->
+        <div class="resize-overlay" 
+             [class.active]="isResizing()"
+             (mouseup)="forceStopResize()"
+             (click)="forceStopResize()"></div>
+        
         @if (selectedFile()) {
           <app-file-viewer [file]="selectedFile()!"></app-file-viewer>
         } @else {

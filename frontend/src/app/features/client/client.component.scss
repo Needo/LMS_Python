@@ -139,6 +139,23 @@
   flex: 1;
   overflow: auto;
   background: #fafafa;
+  position: relative;
+}
+
+// Overlay to prevent iframe from capturing mouse events during resize
+.resize-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: transparent;
+  
+  &.active {
+    pointer-events: all;
+  }
 }
 
 .empty-state {
