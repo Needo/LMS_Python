@@ -183,19 +183,25 @@ export class ClientComponent implements OnInit {
   }
 
   onSearchItemSelect(item: any): void {
+    // Clear current file first to force re-render
+    this.selectedFile.set(null);
+    
     // Navigate to item in tree view
     this.searchService.navigateToItem(item);
     
     // If it's a file, load it
     if (item.type === 'file') {
-      this.fileService.getFileById(item.id).subscribe({
-        next: (file) => {
-          this.selectedFile.set(file);
-        },
-        error: (error) => {
-          console.error('Error loading file:', error);
-        }
-      });
+      // Use setTimeout to ensure the signal update triggers change detection
+      setTimeout(() => {
+        this.fileService.getFileById(item.id).subscribe({
+          next: (file) => {
+            this.selectedFile.set(file);
+          },
+          error: (error) => {
+            console.error('Error loading file:', error);
+          }
+        });
+      }, 0);
     }
   }
 
