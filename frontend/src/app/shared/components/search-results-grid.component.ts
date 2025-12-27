@@ -1,6 +1,6 @@
-import { Component, signal, Input, Output, EventEmitter, computed } from '@angular/core';
+import { Component, signal, input, output, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
+import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
@@ -12,7 +12,7 @@ import { FileSizePipe } from '../pipes/file-size.pipe';
   standalone: true,
   imports: [
     CommonModule,
-    MatCardModule,
+    MatTableModule,
     MatIconModule,
     MatButtonModule,
     MatChipsModule,
@@ -54,44 +54,72 @@ import { FileSizePipe } from '../pipes/file-size.pipe';
         </div>
       </div>
 
-      <!-- Results Grid -->
-      <div class="results-grid">
-        <!-- Course Cards -->
-        <mat-card 
-          *ngFor="let item of filteredResults()"
-          class="result-card"
-          [class.course-card]="item.type === 'course'"
-          [class.file-card]="item.type === 'file'">
+      <!-- Results Table -->
+      <div class="table-container">
+        <table mat-table [dataSource]="filteredResults()" class="results-table">
           
-          <mat-card-header>
-            <mat-icon mat-card-avatar [class.course-icon]="item.type === 'course'">
-              {{ item.icon }}
-            </mat-icon>
-            <mat-card-title>{{ item.name }}</mat-card-title>
-            <mat-card-subtitle *ngIf="item.type === 'file'">
-              {{ item.fileType?.toUpperCase() || 'FILE' }}
-              <span *ngIf="item.fileSize"> • {{ item.fileSize | fileSize }}</span>
-            </mat-card-subtitle>
-          </mat-card-header>
+          <!-- Icon Column -->
+          <ng-container matColumnDef="icon">
+            <th mat-header-cell *matHeaderCellDef>Type</th>
+            <td mat-cell *matCellDef="let item">
+              <mat-icon [class.course-icon]="item.type === 'course'" [class.file-icon]="item.type === 'file'">
+                {{ item.icon }}
+              </mat-icon>
+            </td>
+          </ng-container>
 
-          <mat-card-content *ngIf="item.path">
-            <div class="file-path">
-              <mat-icon>folder</mat-icon>
-              <span>{{ item.path }}</span>
-            </div>
-          </mat-card-content>
+          <!-- Name Column -->
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let item" class="name-cell">
+              <div class="name-content">
+                <span class="item-name">{{ item.name }}</span>
+                <span class="item-type" *ngIf="item.type === 'file'">
+                  {{ item.fileType?.toUpperCase() || 'FILE' }}
+                </span>
+              </div>
+            </td>
+          </ng-container>
 
-          <mat-card-actions>
-            <button 
-              mat-raised-button 
-              color="primary"
-              (click)="onSelectItem(item)"
-              [attr.aria-label]="'Open ' + item.name">
-              <mat-icon>{{ item.type === 'course' ? 'school' : 'launch' }}</mat-icon>
-              {{ item.type === 'course' ? 'View Course' : 'Open File' }}
-            </button>
-          </mat-card-actions>
-        </mat-card>
+          <!-- Path Column -->
+          <ng-container matColumnDef="path">
+            <th mat-header-cell *matHeaderCellDef>Location</th>
+            <td mat-cell *matCellDef="let item" class="path-cell">
+              <span *ngIf="item.path">{{ item.path }}</span>
+              <span *ngIf="!item.path && item.type === 'course'">Course</span>
+            </td>
+          </ng-container>
+
+          <!-- Size Column -->
+          <ng-container matColumnDef="size">
+            <th mat-header-cell *matHeaderCellDef>Size</th>
+            <td mat-cell *matCellDef="let item">
+              <span *ngIf="item.fileSize">{{ item.fileSize | fileSize }}</span>
+              <span *ngIf="!item.fileSize">-</span>
+            </td>
+          </ng-container>
+
+          <!-- Action Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Action</th>
+            <td mat-cell *matCellDef="let item">
+              <button 
+                mat-raised-button 
+                color="primary"
+                (click)="onSelectItem(item)"
+                [attr.aria-label]="'Open ' + item.name">
+                <mat-icon>{{ item.type === 'course' ? 'school' : 'launch' }}</mat-icon>
+                {{ item.type === 'course' ? 'View' : 'Open' }}
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+              class="result-row"
+              [class.course-row]="row.type === 'course'"
+              [class.file-row]="row.type === 'file'"></tr>
+        </table>
       </div>
 
       <!-- No Results -->
@@ -148,101 +176,87 @@ import { FileSizePipe } from '../pipes/file-size.pipe';
       color: rgba(0,0,0,0.6);
     }
 
-    /* Grid Layout */
-    .results-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 24px;
-      margin-top: 24px;
+    /* Table Container */
+    .table-container {
+      overflow-x: auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
-    @media (max-width: 768px) {
-      .results-grid {
-        grid-template-columns: 1fr;
-      }
+    .results-table {
+      width: 100%;
     }
 
-    /* Card Styles */
-    .result-card {
-      transition: transform 0.2s, box-shadow 0.2s;
-      cursor: pointer;
+    th.mat-header-cell {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.87);
+      background: #f5f5f5;
     }
 
-    .result-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    td.mat-cell {
+      padding: 16px;
     }
 
-    .course-card {
-      border-left: 4px solid #1976d2;
-    }
-
-    .file-card {
-      border-left: 4px solid #4caf50;
-    }
-
-    mat-card-header {
-      margin-bottom: 16px;
-    }
-
-    mat-icon[mat-card-avatar] {
-      width: 48px;
-      height: 48px;
-      font-size: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
+    /* Icon Column */
     mat-icon.course-icon {
       color: #1976d2;
     }
 
-    mat-card-title {
-      font-size: 18px;
-      font-weight: 500;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    mat-icon.file-icon {
+      color: #4caf50;
     }
 
-    mat-card-subtitle {
-      font-size: 12px;
-      text-transform: uppercase;
-      color: rgba(0,0,0,0.6);
+    /* Name Column */
+    .name-cell {
+      max-width: 400px;
     }
 
-    .file-path {
+    .name-content {
       display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px;
-      background: #f5f5f5;
-      border-radius: 4px;
-      font-size: 12px;
-      color: rgba(0,0,0,0.6);
-      overflow: hidden;
+      flex-direction: column;
+      gap: 4px;
     }
 
-    .file-path mat-icon {
+    .item-name {
       font-size: 16px;
-      width: 16px;
-      height: 16px;
+      font-weight: 500;
+      color: rgba(0,0,0,0.87);
     }
 
-    .file-path span {
+    .item-type {
+      font-size: 11px;
+      color: rgba(0,0,0,0.6);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Path Column */
+    .path-cell {
+      font-size: 13px;
+      color: rgba(0,0,0,0.6);
+      max-width: 300px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    mat-card-actions {
-      padding: 16px;
-      margin: 0;
+    /* Row Styles */
+    .result-row {
+      transition: background 0.2s;
     }
 
-    mat-card-actions button {
-      width: 100%;
+    .result-row:hover {
+      background: #f5f5f5;
+    }
+
+    .course-row {
+      border-left: 3px solid #1976d2;
+    }
+
+    .file-row {
+      border-left: 3px solid #4caf50;
     }
 
     /* No Results */
@@ -269,32 +283,52 @@ import { FileSizePipe } from '../pipes/file-size.pipe';
       margin: 0;
       font-size: 14px;
     }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .table-container {
+        overflow-x: scroll;
+      }
+    }
   `]
 })
 export class SearchResultsGridComponent {
-  @Input() query = signal('');
-  @Input() results = signal<SearchResultItem[]>([]);
-  @Output() selectItem = new EventEmitter<SearchResultItem>();
-  @Output() closeSearch = new EventEmitter<void>();
+  query = input.required<string>();
+  results = input.required<SearchResultItem[]>();
+  selectItem = output<SearchResultItem>();
+  closeSearch = output<void>();
 
   filter = signal<'all' | 'courses' | 'files'>('all');
+  
+  displayedColumns = ['icon', 'name', 'path', 'size', 'actions'];
 
-  courseCount = computed(() => 
-    this.results().filter(r => r.type === 'course').length
-  );
+  courseCount = computed(() => {
+    const resultsArray = this.results();
+    return Array.isArray(resultsArray) ? resultsArray.filter(r => r.type === 'course').length : 0;
+  });
 
-  fileCount = computed(() => 
-    this.results().filter(r => r.type === 'file').length
-  );
+  fileCount = computed(() => {
+    const resultsArray = this.results();
+    return Array.isArray(resultsArray) ? resultsArray.filter(r => r.type === 'file').length : 0;
+  });
 
-  totalResults = computed(() => this.results().length);
+  totalResults = computed(() => {
+    const resultsArray = this.results();
+    return Array.isArray(resultsArray) ? resultsArray.length : 0;
+  });
 
   filteredResults = computed(() => {
     const filterValue = this.filter();
-    if (filterValue === 'all') {
-      return this.results();
+    const resultsArray = this.results();
+    
+    if (!Array.isArray(resultsArray)) {
+      return [];
     }
-    return this.results().filter(r => {
+    
+    if (filterValue === 'all') {
+      return resultsArray;
+    }
+    return resultsArray.filter(r => {
       if (filterValue === 'courses') return r.type === 'course';
       if (filterValue === 'files') return r.type === 'file';
       return true;

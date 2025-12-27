@@ -68,8 +68,8 @@
     <!-- SEARCH VIEW: Show search results grid -->
     <div *ngIf="currentView() === 'search'" class="search-view">
       <app-search-results-grid
-        [query]="searchQueryText"
-        [results]="searchResults"
+        [query]="searchQueryText()"
+        [results]="searchResults()"
         (selectItem)="onSearchItemSelect($event)"
         (closeSearch)="closeSearch()">
       </app-search-results-grid>
