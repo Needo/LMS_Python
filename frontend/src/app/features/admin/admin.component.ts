@@ -13,6 +13,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatBadgeModule } from '@angular/material/badge';
+import { MatTabsModule } from '@angular/material/tabs';
 import { AuthService } from '../../core/services/auth.service';
 import { ScannerService, ScanStatusResponse } from '../../core/services/scanner.service';
 import { BackupService, Backup, BackupStatus } from '../../core/services/backup.service';
@@ -20,6 +21,7 @@ import { ConfigService } from '../../core/services/config.service';
 import { TreeStateService } from '../../core/services/tree-state.service';
 import { ScanResult, ScanStatus } from '../../core/models/scan.model';
 import { RestoreConfirmDialogComponent } from './components/restore-confirm-dialog.component';
+import { UserManagementComponent } from './components/user-management.component';
 import { FileSizePipe } from '../../shared/pipes/file-size.pipe';
 
 @Component({
@@ -39,6 +41,8 @@ import { FileSizePipe } from '../../shared/pipes/file-size.pipe';
     MatIconModule,
     MatDialogModule,
     MatBadgeModule,
+    MatTabsModule,
+    UserManagementComponent,
     FileSizePipe
   ],
   templateUrl: './admin.component.html',
@@ -50,6 +54,7 @@ export class AdminComponent implements OnInit, OnDestroy {
   scanResult = signal<ScanResult | null>(null);
   scanStatus = signal<ScanStatusResponse | null>(null);
   currentUser: any;
+  currentTab = signal(0);
   
   private statusPollInterval: any;
   readonly ScanStatus = ScanStatus;

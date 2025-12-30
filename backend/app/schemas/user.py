@@ -4,10 +4,30 @@ from typing import Optional
 
 class UserBase(BaseModel):
     username: str
-    email: EmailStr
+    email: Optional[EmailStr] = None
 
 class UserCreate(UserBase):
     password: str
+    isAdmin: Optional[bool] = False
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+    isAdmin: Optional[bool] = None
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: Optional[str] = None
+    isAdmin: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class UserWithEnrollments(UserResponse):
+    enrollment_count: int
 
 class UserLogin(BaseModel):
     username: str

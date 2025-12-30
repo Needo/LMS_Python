@@ -14,8 +14,17 @@
   </mat-toolbar>
 
   <div class="content-container">
-    <div class="admin-content">
-      <mat-card class="settings-card">
+    <mat-tab-group [(selectedIndex)]="currentTab" class="admin-tabs">
+      <mat-tab label="User Management">
+        <div class="tab-content">
+          <app-user-management></app-user-management>
+        </div>
+      </mat-tab>
+      
+      <mat-tab label="Folder Settings">
+        <div class="tab-content">
+          <div class="admin-content">
+            <mat-card class="settings-card">
         <mat-card-header>
           <mat-card-title>Root Folder Settings</mat-card-title>
         </mat-card-header>
@@ -173,6 +182,24 @@
           </div>
         </mat-card-content>
       </mat-card>
-    </div>
+          </div>
+        </div>
+      </mat-tab>
+      
+      <mat-tab label="Backup & Restore">
+        <div class="tab-content">
+          <div class="admin-content">
+            <mat-card class="backup-card">
+              <mat-card-header>
+                <mat-card-title>Database Backup & Restore</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <p>Backup moved to its own tab for better organization.</p>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
   </div>
 </div>

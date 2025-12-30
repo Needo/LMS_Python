@@ -4,6 +4,20 @@
   padding: 16px;
 }
 
+.admin-tabs {
+  height: 100%;
+  
+  ::ng-deep .mat-mdc-tab-body-wrapper {
+    flex: 1;
+    overflow: auto;
+  }
+}
+
+.tab-content {
+  height: 100%;
+  overflow: auto;
+}
+
 .settings-card,
 .results-card {
   margin-bottom: 24px;
