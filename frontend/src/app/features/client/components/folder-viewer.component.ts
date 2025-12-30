@@ -239,16 +239,18 @@ import { FileSizePipe } from '../../../shared/pipes/file-size.pipe';
   `]
 })
 export class FolderViewerComponent implements OnInit, OnChanges {
-  @Input() folderId!: number;
+  @Input() folderId!: number | null;
   @Input() folderName: string = 'Folder';
+  @Input() courseId!: number;
   @Output() fileSelected = new EventEmitter<FileNode>();
-  @Output() folderSelected = new EventEmitter<{ folderId: number; folderName: string }>();
+  @Output() folderSelected = new EventEmitter<{ folderId: number | null; folderName: string; courseId: number }>();
 
   contents = signal<FileNode[]>([]);
   isLoading = signal(false);
   displayedColumns = ['icon', 'name', 'type', 'size', 'actions'];
   private allFiles: FileNode[] = [];
   private currentFolderId: number | null = null;
+  private currentCourseId: number | null = null;
 
   constructor(private fileService: FileService) {}
 
@@ -257,48 +259,72 @@ export class FolderViewerComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(): void {
-    // Reload when folderId changes
-    if (this.folderId !== this.currentFolderId) {
+    // Reload when folderId OR courseId changes
+    if (this.folderId !== this.currentFolderId || this.courseId !== this.currentCourseId) {
       this.currentFolderId = this.folderId;
+      this.currentCourseId = this.courseId;
       this.loadFiles();
     }
   }
 
   private loadFiles(): void {
-    if (!this.folderId) return;
+    if (!this.courseId) return;
     
     this.isLoading.set(true);
     
-    // We need to get the course ID from somewhere - let's get all files and filter
-    // This is a workaround - ideally we'd pass courseId as an input
-    this.fileService.getFileById(this.folderId).subscribe({
-      next: (folder) => {
-        if (folder.courseId) {
-          this.fileService.getFilesByCourse(folder.courseId).subscribe({
-            next: (files) => {
-              this.allFiles = files;
-              this.loadFolderContents();
-              this.isLoading.set(false);
-            },
-            error: (error) => {
-              console.error('Error loading files:', error);
-              this.isLoading.set(false);
-            }
-          });
-        } else {
-          this.isLoading.set(false);
-        }
+    // Load all files for the course
+    this.fileService.getFilesByCourse(this.courseId).subscribe({
+      next: (files) => {
+        this.allFiles = files;
+        this.loadFolderContents();
+        this.isLoading.set(false);
       },
       error: (error) => {
-        console.error('Error loading folder:', error);
+        console.error('Error loading files:', error);
         this.isLoading.set(false);
       }
     });
   }
 
   private loadFolderContents(): void {
-    // Filter from already loaded files in tree
-    const folderContents = this.allFiles.filter(f => f.parentId === this.folderId);
+    // If folderId is null, show root level items (parentId = null)
+    // Otherwise, show items where parentId === folderId
+    const folderContents = this.folderId === null 
+      ? this.allFiles.filter(f => f.parentId === null)
+      : this.allFiles.filter(f => f.parentId === this.folderId);
+    
+    console.log('=== Folder Viewer Debug ===');
+    console.log('Looking for items with parentId:', this.folderId === null ? 'null (root level)' : this.folderId);
+    console.log('Folder name:', this.folderName);
+    console.log('CourseId:', this.courseId);
+    console.log('Total files loaded:', this.allFiles.length);
+    
+    // Show all items and their parentIds
+    console.log('All items in course:');
+    this.allFiles.forEach(f => {
+      console.log(`  - ${f.isDirectory ? '[DIR]' : '[FILE]'} ${f.name} (id: ${f.id}, parentId: ${f.parentId})`);
+    });
+    
+    console.log('Folder contents found:', folderContents.length);
+    console.log('Contents breakdown:', {
+      folders: folderContents.filter(f => f.isDirectory).length,
+      files: folderContents.filter(f => !f.isDirectory).length
+    });
+    
+    if (folderContents.length > 0) {
+      console.log('Items in folder:');
+      folderContents.forEach(f => {
+        console.log(`  - ${f.isDirectory ? '[DIR]' : '[FILE]'} ${f.name}`);
+      });
+    }
+    
+    // Sort: folders first, then files
+    folderContents.sort((a, b) => {
+      if (a.isDirectory && !b.isDirectory) return -1;
+      if (!a.isDirectory && b.isDirectory) return 1;
+      return a.name.localeCompare(b.name);
+    });
+    
     this.contents.set(folderContents);
   }
 
@@ -311,7 +337,11 @@ export class FolderViewerComponent implements OnInit, OnChanges {
   onItemClick(item: FileNode): void {
     if (item.isDirectory) {
       // Navigate to subfolder
-      this.folderSelected.emit({ folderId: item.id, folderName: item.name });
+      this.folderSelected.emit({ 
+        folderId: item.id, 
+        folderName: item.name,
+        courseId: this.courseId 
+      });
     } else {
       // Open file
       this.fileSelected.emit(item);

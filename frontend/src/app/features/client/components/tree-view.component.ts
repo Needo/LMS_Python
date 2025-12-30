@@ -25,7 +25,8 @@ class TreeNode {
     public type: 'category' | 'course' | 'file' | 'folder',
     public isExpandable: boolean,
     public fileType?: FileType,
-    public fileData?: FileNode
+    public fileData?: FileNode,
+    public courseId?: number  // Track courseId for folders
   ) {}
 }
 
@@ -46,7 +47,7 @@ class TreeNode {
 })
 export class TreeViewComponent implements OnInit {
   @Output() fileSelected = new EventEmitter<FileNode>();
-  @Output() folderSelected = new EventEmitter<{ folderId: number; folderName: string }>();
+  @Output() folderSelected = new EventEmitter<{ folderId: number | null; folderName: string; courseId: number }>();
 
   // No more TreeControl! Use childrenAccessor instead
   childrenAccessor = (node: TreeNode) => node.children.asObservable();
@@ -216,7 +217,8 @@ export class TreeViewComponent implements OnInit {
         file.isDirectory ? 'folder' : 'file',
         file.isDirectory,
         file.isDirectory ? undefined : this.fileService.getFileType(file.name),
-        file.isDirectory ? undefined : file
+        file.isDirectory ? undefined : file,
+        file.courseId  // Pass courseId for both files and folders
       );
       
       fileMap.set(file.id, treeNode);
@@ -258,6 +260,24 @@ export class TreeViewComponent implements OnInit {
       
       this.fileSelected.emit(node.fileData);
     }
+    // Handle course clicks - show root contents (parentId = null)
+    else if (node.type === 'course') {
+      this.selectedNodeId.set(node.id);
+      
+      // Update state service
+      this.treeState.selectNode({
+        id: node.id,
+        type: 'course',
+        name: node.name
+      });
+      
+      // Emit folder selection with null folderId to indicate root level
+      this.folderSelected.emit({ 
+        folderId: null as any, // null means show root level items
+        folderName: node.name,
+        courseId: node.id 
+      });
+    }
     // Handle folder clicks - show folder contents
     else if (node.type === 'folder') {
       this.selectedNodeId.set(node.id);
@@ -269,7 +289,11 @@ export class TreeViewComponent implements OnInit {
         name: node.name
       });
       
-      this.folderSelected.emit({ folderId: node.id, folderName: node.name });
+      this.folderSelected.emit({ 
+        folderId: node.id, 
+        folderName: node.name,
+        courseId: node.courseId! 
+      });
     }
   }
 

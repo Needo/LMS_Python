@@ -51,7 +51,7 @@ import { debounceTime } from 'rxjs/operators';
 export class ClientComponent implements OnInit {
   currentUser: any;
   selectedFile = signal<FileNode | null>(null);
-  selectedFolder = signal<{ folderId: number; folderName: string } | null>(null);
+  selectedFolder = signal<{ folderId: number | null; folderName: string; courseId: number } | null>(null);
   viewMode = signal<'file' | 'folder' | 'empty'>('empty');
   isLoading = signal(false);
   
@@ -140,7 +140,7 @@ export class ClientComponent implements OnInit {
     }
   }
 
-  onFolderSelected(folder: { folderId: number; folderName: string }): void {
+  onFolderSelected(folder: { folderId: number | null; folderName: string; courseId: number }): void {
     this.selectedFolder.set(folder);
     this.selectedFile.set(null);
     this.viewMode.set('folder');
