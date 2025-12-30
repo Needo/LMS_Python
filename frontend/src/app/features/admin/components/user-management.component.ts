@@ -182,6 +182,7 @@ export class UserManagementComponent implements OnInit {
   openCreateDialog(): void {
     const dialogRef = this.dialog.open(UserDialogComponent, {
       width: '500px',
+      maxHeight: '90vh',
       data: { mode: 'create' }
     });
 
@@ -195,6 +196,7 @@ export class UserManagementComponent implements OnInit {
   openEditDialog(user: User): void {
     const dialogRef = this.dialog.open(UserDialogComponent, {
       width: '500px',
+      maxHeight: '90vh',
       data: { mode: 'edit', user }
     });
 

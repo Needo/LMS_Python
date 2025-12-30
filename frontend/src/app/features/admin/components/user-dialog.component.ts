@@ -51,12 +51,18 @@ import { UserService, User, UserCreate, UserUpdate } from '../../../core/service
     </mat-dialog-actions>
   `,
   styles: [`
+    h2[mat-dialog-title] {
+      margin-bottom: 24px;
+    }
+
     mat-dialog-content {
       display: flex;
       flex-direction: column;
       gap: 16px;
       min-width: 400px;
-      padding: 20px;
+      min-height: 320px;
+      padding: 24px 20px 20px 20px;
+      overflow-y: auto;
     }
 
     .full-width {
@@ -65,6 +71,7 @@ import { UserService, User, UserCreate, UserUpdate } from '../../../core/service
 
     mat-dialog-actions {
       padding: 16px 24px;
+      margin: 0;
     }
   `]
 })

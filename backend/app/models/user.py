@@ -16,3 +16,12 @@ class User(Base):
     # Relationships
     progress = relationship("UserProgress", back_populates="user")
     last_viewed = relationship("LastViewed", back_populates="user", uselist=False)
+    
+    # Property alias for camelCase compatibility
+    @property
+    def isAdmin(self) -> bool:
+        return self.is_admin
+    
+    @isAdmin.setter
+    def isAdmin(self, value: bool):
+        self.is_admin = value
