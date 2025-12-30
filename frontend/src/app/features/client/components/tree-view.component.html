@@ -42,7 +42,7 @@
           {{ getNodeIcon(node) }}
         </mat-icon>
 
-        <span class="node-label">
+        <span class="node-label" (click)="onNodeClick(node)">
           {{ node.name }}
         </span>
         

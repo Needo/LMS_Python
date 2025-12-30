@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal, effect } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, OnInit, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
@@ -238,7 +238,7 @@ import { FileSizePipe } from '../../../shared/pipes/file-size.pipe';
     }
   `]
 })
-export class FolderViewerComponent {
+export class FolderViewerComponent implements OnInit, OnChanges {
   @Input() folderId!: number;
   @Input() folderName: string = 'Folder';
   @Output() fileSelected = new EventEmitter<FileNode>();
@@ -248,12 +248,50 @@ export class FolderViewerComponent {
   isLoading = signal(false);
   displayedColumns = ['icon', 'name', 'type', 'size', 'actions'];
   private allFiles: FileNode[] = [];
+  private currentFolderId: number | null = null;
 
-  constructor(private fileService: FileService) {
-    // Load contents when folderId changes
-    effect(() => {
-      if (this.folderId) {
-        this.loadFolderContents();
+  constructor(private fileService: FileService) {}
+
+  ngOnInit(): void {
+    this.loadFiles();
+  }
+
+  ngOnChanges(): void {
+    // Reload when folderId changes
+    if (this.folderId !== this.currentFolderId) {
+      this.currentFolderId = this.folderId;
+      this.loadFiles();
+    }
+  }
+
+  private loadFiles(): void {
+    if (!this.folderId) return;
+    
+    this.isLoading.set(true);
+    
+    // We need to get the course ID from somewhere - let's get all files and filter
+    // This is a workaround - ideally we'd pass courseId as an input
+    this.fileService.getFileById(this.folderId).subscribe({
+      next: (folder) => {
+        if (folder.courseId) {
+          this.fileService.getFilesByCourse(folder.courseId).subscribe({
+            next: (files) => {
+              this.allFiles = files;
+              this.loadFolderContents();
+              this.isLoading.set(false);
+            },
+            error: (error) => {
+              console.error('Error loading files:', error);
+              this.isLoading.set(false);
+            }
+          });
+        } else {
+          this.isLoading.set(false);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading folder:', error);
+        this.isLoading.set(false);
       }
     });
   }

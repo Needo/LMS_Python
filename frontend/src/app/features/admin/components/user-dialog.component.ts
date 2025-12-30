@@ -51,18 +51,22 @@ import { UserService, User, UserCreate, UserUpdate } from '../../../core/service
     </mat-dialog-actions>
   `,
   styles: [`
-    h2[mat-dialog-title] {
-      margin-bottom: 24px;
-    }
-
     mat-dialog-content {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 20px;
       min-width: 400px;
-      min-height: 320px;
-      padding: 24px 20px 20px 20px;
-      overflow-y: auto;
+      min-height: 350px;
+      padding: 32px 24px 24px 24px;
+      overflow-y: visible !important;
+    }
+
+    mat-form-field {
+      margin-top: 8px;
+    }
+
+    mat-form-field:first-of-type {
+      margin-top: 16px;
     }
 
     .full-width {
@@ -70,8 +74,17 @@ import { UserService, User, UserCreate, UserUpdate } from '../../../core/service
     }
 
     mat-dialog-actions {
-      padding: 16px 24px;
+      padding: 20px 24px;
       margin: 0;
+      margin-top: 16px;
+    }
+
+    ::ng-deep .mat-mdc-form-field {
+      margin-bottom: 4px;
+    }
+
+    ::ng-deep .mat-mdc-text-field-wrapper {
+      padding-top: 8px;
     }
   `]
 })

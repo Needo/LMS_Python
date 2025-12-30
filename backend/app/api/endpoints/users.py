@@ -207,7 +207,7 @@ def get_user_enrollments(
             "id": e.id,
             "course_id": e.course_id,
             "course_name": e.course.name if e.course else None,
-            "enrolled_at": e.enrolled_at
+            "enrolled_at": e.created_at
         }
         for e in enrollments
     ]
@@ -266,7 +266,7 @@ def enroll_user_in_course(
         "id": enrollment.id,
         "course_id": course_id,
         "course_name": course.name,
-        "enrolled_at": enrollment.enrolled_at
+        "enrolled_at": enrollment.created_at
     }
 
 @router.delete("/{user_id}/enrollments/{course_id}", status_code=status.HTTP_204_NO_CONTENT)
