@@ -98,90 +98,6 @@
           </mat-card-content>
         </mat-card>
       }
-
-      <!-- Database Backup & Restore Section -->
-      <mat-card class="backup-card">
-        <mat-card-header>
-          <mat-card-title>Database Backup & Restore</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <p>Create backups and restore your database.</p>
-          
-          <div class="backup-actions">
-            <button mat-raised-button 
-                    color="primary" 
-                    (click)="createBackup()"
-                    [disabled]="isBackupInProgress() || isRestoreInProgress() || backupStatus()?.is_locked">
-              @if (isBackupInProgress()) {
-                <mat-spinner diameter="20"></mat-spinner>
-              } @else {
-                <mat-icon>backup</mat-icon>
-              }
-              Create Backup
-            </button>
-            
-            <button mat-button (click)="loadBackups()">
-              <mat-icon>refresh</mat-icon>
-              Refresh List
-            </button>
-          </div>
-          
-          @if (backupStatus()?.is_locked) {
-            <div class="status-container">
-              <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-              <p class="status-text">
-                Operation in progress: {{ backupStatus()?.operation_type }}
-              </p>
-            </div>
-          }
-          
-          <!-- Backups List -->
-          <div class="backups-list">
-            @if (backups().length === 0) {
-              <p class="no-backups">No backups available</p>
-            } @else {
-              @for (backup of backups(); track backup.id) {
-                <mat-card class="backup-item">
-                  <div class="backup-info">
-                    <mat-icon class="backup-icon">folder_zip</mat-icon>
-                    <div class="backup-details">
-                      <h4>{{ backup.filename }}</h4>
-                      <p>{{ backup.file_size | fileSize }} | {{ backup.created_at | date:'medium' }}</p>
-                      <p>Created by: {{ backup.created_by }}</p>
-                      @if (backup.notes) {
-                        <p class="backup-notes">Notes: {{ backup.notes }}</p>
-                      }
-                    </div>
-                  </div>
-                  
-                  <div class="backup-item-actions">
-                    <button mat-icon-button 
-                            (click)="downloadBackup(backup)"
-                            title="Download">
-                      <mat-icon>download</mat-icon>
-                    </button>
-                    
-                    <button mat-icon-button 
-                            color="warn"
-                            (click)="restoreBackup(backup)"
-                            [disabled]="isBackupInProgress() || isRestoreInProgress() || backupStatus()?.is_locked"
-                            title="Restore">
-                      <mat-icon>restore</mat-icon>
-                    </button>
-                    
-                    <button mat-icon-button 
-                            color="warn"
-                            (click)="deleteBackup(backup)"
-                            title="Delete">
-                      <mat-icon>delete</mat-icon>
-                    </button>
-                  </div>
-                </mat-card>
-              }
-            }
-          </div>
-        </mat-card-content>
-      </mat-card>
           </div>
         </div>
       </mat-tab>
@@ -189,12 +105,87 @@
       <mat-tab label="Backup & Restore">
         <div class="tab-content">
           <div class="admin-content">
+            <!-- Database Backup & Restore Section -->
             <mat-card class="backup-card">
               <mat-card-header>
                 <mat-card-title>Database Backup & Restore</mat-card-title>
               </mat-card-header>
               <mat-card-content>
-                <p>Backup moved to its own tab for better organization.</p>
+                <p>Create backups and restore your database.</p>
+                
+                <div class="backup-actions">
+                  <button mat-raised-button 
+                          color="primary" 
+                          (click)="createBackup()"
+                          [disabled]="isBackupInProgress() || isRestoreInProgress() || backupStatus()?.is_locked">
+                    @if (isBackupInProgress()) {
+                      <mat-spinner diameter="20"></mat-spinner>
+                    } @else {
+                      <mat-icon>backup</mat-icon>
+                    }
+                    Create Backup
+                  </button>
+                  
+                  <button mat-button (click)="loadBackups()">
+                    <mat-icon>refresh</mat-icon>
+                    Refresh List
+                  </button>
+                </div>
+                
+                @if (backupStatus()?.is_locked) {
+                  <div class="status-container">
+                    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+                    <p class="status-text">
+                      Operation in progress: {{ backupStatus()?.operation_type }}
+                    </p>
+                  </div>
+                }
+                
+                <!-- Backups List -->
+                <div class="backups-list">
+                  @if (backups().length === 0) {
+                    <p class="no-backups">No backups available</p>
+                  } @else {
+                    @for (backup of backups(); track backup.id) {
+                      <mat-card class="backup-item">
+                        <div class="backup-info">
+                          <mat-icon class="backup-icon">folder_zip</mat-icon>
+                          <div class="backup-details">
+                            <h4>{{ backup.filename }}</h4>
+                            <p>{{ backup.file_size | fileSize }} | {{ backup.created_at | date:'medium' }}</p>
+                            <p>Created by: {{ backup.created_by }}</p>
+                            @if (backup.notes) {
+                              <p class="backup-notes">Notes: {{ backup.notes }}</p>
+                            }
+                          </div>
+                        </div>
+                        
+                        <div class="backup-item-actions">
+                          <button mat-icon-button 
+                                  (click)="downloadBackup(backup)"
+                                  title="Download">
+                            <mat-icon>download</mat-icon>
+                          </button>
+                          
+                          <button mat-icon-button 
+                                  color="warn"
+                                  (click)="restoreBackup(backup)"
+                                  [disabled]="isBackupInProgress() || isRestoreInProgress() || backupStatus()?.is_locked"
+                                  title="Restore">
+                            <mat-icon>restore</mat-icon>
+                          </button>
+                          
+                          <button mat-icon-button 
+                                  color="warn"
+                                  (click)="deleteBackup(backup)"
+                                  title="Delete">
+                            <mat-icon>delete</mat-icon>
+                          </button>
+                        </div>
+                      </mat-card>
+                    }
+                  }
+                </div>
               </mat-card-content>
             </mat-card>
           </div>

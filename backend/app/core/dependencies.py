@@ -36,9 +36,12 @@ def get_current_admin_user(
     """
     Verify that current user is an admin.
     """
-    if not current_user.is_admin:
+    if not current_user.isAdmin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough privileges"
         )
     return current_user
+
+# Alias for convenience
+get_admin_user = get_current_admin_user

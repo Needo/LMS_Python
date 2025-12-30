@@ -1,7 +1,30 @@
+.full-height {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-toolbar {
+  flex-shrink: 0;
+}
+
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.content-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 .admin-content {
-  max-width: 800px;
-  margin: 24px auto;
-  padding: 16px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 24px;
 }
 
 .admin-tabs {
@@ -16,6 +39,7 @@
 .tab-content {
   height: 100%;
   overflow: auto;
+  padding: 0;
 }
 
 .settings-card,
