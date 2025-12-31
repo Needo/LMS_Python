@@ -1,7 +1,8 @@
 import { Component, Inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
-import { MatListModule } from '@angular/material/list';
+import { MatTableModule } from '@angular/material/table';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -21,53 +22,47 @@ interface Course {
   imports: [
     CommonModule,
     MatDialogModule,
-    MatListModule,
+    MatTableModule,
+    MatCheckboxModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule
   ],
   template: `
-    <h2 mat-dialog-title>Manage Enrollments - {{ data.user.username }}</h2>
+    <h2 mat-dialog-title>Manage Course Enrollments - {{ data.user.username }}</h2>
     <mat-dialog-content>
-      <div class="section">
-        <h3>Enrolled Courses</h3>
-        @if (isLoading()) {
-          <div class="loading"><mat-spinner diameter="40"></mat-spinner></div>
-        } @else if (enrollments().length === 0) {
-          <p class="empty">No enrollments</p>
-        } @else {
-          <mat-list>
-            @for (enrollment of enrollments(); track enrollment.id) {
-              <mat-list-item>
-                <mat-icon matListItemIcon>school</mat-icon>
-                <span matListItemTitle>{{ enrollment.course_name }}</span>
-                <button mat-icon-button color="warn" (click)="unenroll(enrollment)">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </mat-list-item>
-            }
-          </mat-list>
-        }
-      </div>
+      @if (isLoading()) {
+        <div class="loading"><mat-spinner diameter="40"></mat-spinner></div>
+      } @else {
+        <div class="courses-table">
+          <table mat-table [dataSource]="allCoursesWithStatus()" class="full-width">
+            
+            <!-- Checkbox Column -->
+            <ng-container matColumnDef="enrolled">
+              <th mat-header-cell *matHeaderCellDef>Enrolled</th>
+              <td mat-cell *matCellDef="let course">
+                <mat-checkbox 
+                  [checked]="course.enrolled"
+                  (change)="toggleEnrollment(course, $event.checked)"
+                  color="primary">
+                </mat-checkbox>
+              </td>
+            </ng-container>
 
-      <div class="section">
-        <h3>Available Courses</h3>
-        @if (availableCourses().length === 0) {
-          <p class="empty">All courses enrolled</p>
-        } @else {
-          <mat-list>
-            @for (course of availableCourses(); track course.id) {
-              <mat-list-item>
-                <mat-icon matListItemIcon>add_circle</mat-icon>
-                <span matListItemTitle>{{ course.name }}</span>
-                <button mat-icon-button color="primary" (click)="enroll(course)">
-                  <mat-icon>add</mat-icon>
-                </button>
-              </mat-list-item>
-            }
-          </mat-list>
-        }
-      </div>
+            <!-- Course Name Column -->
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Course Name</th>
+              <td mat-cell *matCellDef="let course" class="course-name">
+                <mat-icon class="course-icon">school</mat-icon>
+                <span [title]="course.name">{{ course.name }}</span>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+        </div>
+      }
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button (click)="close()">Close</button>
@@ -75,36 +70,67 @@ interface Course {
   `,
   styles: [`
     mat-dialog-content {
-      min-width: 500px;
+      min-width: 700px;
+      max-width: 900px;
       max-height: 600px;
       padding: 20px;
+      overflow-y: auto;
     }
 
-    .section {
-      margin-bottom: 24px;
+    .courses-table {
+      width: 100%;
+      overflow-x: auto;
     }
 
-    .section h3 {
-      margin: 0 0 12px 0;
-      font-size: 16px;
-      font-weight: 500;
+    .full-width {
+      width: 100%;
+    }
+
+    th.mat-header-cell {
+      font-size: 14px;
+      font-weight: 600;
       color: rgba(0,0,0,0.87);
+      background: #f5f5f5;
     }
 
-    .empty {
-      color: rgba(0,0,0,0.6);
-      font-style: italic;
-      margin: 12px 0;
+    td.mat-cell {
+      padding: 12px 16px;
+    }
+
+    .course-name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .course-name span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 550px;
+    }
+
+    .course-icon {
+      color: #1976d2;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
     }
 
     .loading {
       display: flex;
       justify-content: center;
-      padding: 20px;
+      padding: 40px;
     }
 
-    mat-list-item {
-      border-bottom: 1px solid #e0e0e0;
+    mat-checkbox {
+      display: flex;
+      justify-content: center;
+    }
+
+    tr.mat-row:hover {
+      background: #f5f5f5;
     }
   `]
 })
@@ -112,8 +138,7 @@ export class EnrollmentDialogComponent implements OnInit {
   enrollments = signal<UserEnrollment[]>([]);
   allCourses = signal<Course[]>([]);
   isLoading = signal(true);
-
-  availableCourses = signal<Course[]>([]);
+  displayedColumns = ['enrolled', 'name'];
 
   constructor(
     public dialogRef: MatDialogRef<EnrollmentDialogComponent>,
@@ -125,6 +150,15 @@ export class EnrollmentDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadData();
+  }
+
+  // Compute list of all courses with enrollment status
+  allCoursesWithStatus(): Array<Course & { enrolled: boolean }> {
+    const enrolledIds = new Set(this.enrollments().map(e => e.course_id));
+    return this.allCourses().map(course => ({
+      ...course,
+      enrolled: enrolledIds.has(course.id)
+    }));
   }
 
   loadData(): void {
@@ -149,7 +183,6 @@ export class EnrollmentDialogComponent implements OnInit {
     this.courseService.getCourses().subscribe({
       next: (courses) => {
         this.allCourses.set(courses);
-        this.updateAvailableCourses();
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -160,35 +193,31 @@ export class EnrollmentDialogComponent implements OnInit {
     });
   }
 
-  updateAvailableCourses(): void {
-    const enrolledIds = this.enrollments().map(e => e.course_id);
-    const available = this.allCourses().filter(c => !enrolledIds.includes(c.id));
-    this.availableCourses.set(available);
-  }
-
-  enroll(course: Course): void {
-    this.userService.enrollUserInCourse(this.data.user.id, course.id).subscribe({
-      next: () => {
-        this.snackBar.open(`Enrolled in ${course.name}`, 'Close', { duration: 3000 });
-        this.loadData();
-      },
-      error: (error) => {
-        console.error('Error enrolling:', error);
-        this.snackBar.open(error.error?.detail || 'Failed to enroll', 'Close', { duration: 3000 });
-      }
-    });
-  }
-
-  unenroll(enrollment: UserEnrollment): void {
-    if (confirm(`Remove enrollment from ${enrollment.course_name}?`)) {
-      this.userService.unenrollUserFromCourse(this.data.user.id, enrollment.course_id).subscribe({
+  toggleEnrollment(course: Course & { enrolled: boolean }, checked: boolean): void {
+    if (checked) {
+      // Enroll
+      this.userService.enrollUserInCourse(this.data.user.id, course.id).subscribe({
         next: () => {
-          this.snackBar.open('Enrollment removed', 'Close', { duration: 3000 });
+          this.snackBar.open(`Enrolled in ${course.name}`, 'Close', { duration: 2000 });
+          this.loadData();
+        },
+        error: (error) => {
+          console.error('Error enrolling:', error);
+          this.snackBar.open(error.error?.detail || 'Failed to enroll', 'Close', { duration: 3000 });
+          this.loadData(); // Reload to reset checkbox
+        }
+      });
+    } else {
+      // Unenroll
+      this.userService.unenrollUserFromCourse(this.data.user.id, course.id).subscribe({
+        next: () => {
+          this.snackBar.open(`Unenrolled from ${course.name}`, 'Close', { duration: 2000 });
           this.loadData();
         },
         error: (error) => {
           console.error('Error unenrolling:', error);
-          this.snackBar.open('Failed to remove enrollment', 'Close', { duration: 3000 });
+          this.snackBar.open('Failed to unenroll', 'Close', { duration: 3000 });
+          this.loadData(); // Reload to reset checkbox
         }
       });
     }

@@ -57,4 +57,18 @@ export class CourseService {
         }))
       );
   }
+
+  getEnrolledCourses(userId: number): Observable<Course[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/enrollments/user/${userId}`)
+      .pipe(
+        map(enrollments => enrollments.map(enrollment => ({
+          id: enrollment.course.id,
+          categoryId: enrollment.course.category_id,
+          name: enrollment.course.name,
+          description: enrollment.course.description,
+          path: enrollment.course.path,
+          createdAt: enrollment.course.created_at
+        })))
+      );
+  }
 }

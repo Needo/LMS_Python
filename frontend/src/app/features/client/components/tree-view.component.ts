@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { BehaviorSubject } from 'rxjs';
+import { AuthService } from '../../../core/services/auth.service';
 import { CategoryService } from '../../../core/services/category.service';
 import { CourseService } from '../../../core/services/course.service';
 import { FileService } from '../../../core/services/file.service';
@@ -60,6 +61,7 @@ export class TreeViewComponent implements OnInit {
   loadError = signal<string | null>(null);
 
   constructor(
+    private authService: AuthService,
     private categoryService: CategoryService,
     private courseService: CourseService,
     private fileService: FileService,
@@ -158,9 +160,22 @@ export class TreeViewComponent implements OnInit {
     categoryNode.loading.set(true);
     this.treeState.setLoading('category', categoryNode.id, true);
     
-    this.courseService.getCoursesByCategory(categoryNode.id).subscribe({
-      next: (courses) => {
-        const childNodes: TreeNode[] = courses.map(course => 
+    // Get current user
+    const currentUser = this.authService.currentUser();
+    if (!currentUser) {
+      console.error('No current user found');
+      categoryNode.loading.set(false);
+      this.treeState.setLoading('category', categoryNode.id, false);
+      return;
+    }
+    
+    // Get enrolled courses and filter by category
+    this.courseService.getEnrolledCourses(currentUser.id).subscribe({
+      next: (enrolledCourses) => {
+        // Filter courses by this category
+        const coursesInCategory = enrolledCourses.filter(course => course.categoryId === categoryNode.id);
+        
+        const childNodes: TreeNode[] = coursesInCategory.map(course => 
           new TreeNode(
             course.id,
             course.name,
@@ -176,7 +191,7 @@ export class TreeViewComponent implements OnInit {
         this.treeState.setChildrenLoaded('category', categoryNode.id);
       },
       error: (error) => {
-        console.error('Error loading courses:', error);
+        console.error('Error loading enrolled courses:', error);
         categoryNode.loading.set(false);
         this.treeState.setLoading('category', categoryNode.id, false);
       }
