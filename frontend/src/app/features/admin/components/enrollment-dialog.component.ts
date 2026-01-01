@@ -41,11 +41,13 @@ interface Course {
             <ng-container matColumnDef="enrolled">
               <th mat-header-cell *matHeaderCellDef>Enrolled</th>
               <td mat-cell *matCellDef="let course">
-                <mat-checkbox 
-                  [checked]="course.enrolled"
-                  (change)="toggleEnrollment(course, $event.checked)"
-                  color="primary">
-                </mat-checkbox>
+                <div class="checkbox-container">
+                  <mat-checkbox 
+                    [checked]="course.enrolled"
+                    (change)="toggleEnrollment(course, $event.checked)"
+                    color="primary">
+                  </mat-checkbox>
+                </div>
               </td>
             </ng-container>
 
@@ -82,31 +84,50 @@ interface Course {
       width: 100%;
     }
 
-    .full-width {
+    table {
       width: 100%;
+      border-collapse: collapse;
     }
 
-    th.mat-header-cell {
+    th.mat-mdc-header-cell {
       font-size: 14px;
       font-weight: 600;
       color: rgba(0,0,0,0.87);
       background: #f5f5f5;
-      padding: 12px 16px;
+      padding: 16px !important;
+      vertical-align: middle !important;
+      height: 56px !important;
+      line-height: 56px;
     }
 
-    th.mat-header-cell:first-child {
-      width: 100px;
+    th.mat-mdc-header-cell:first-child {
+      width: 120px;
+      min-width: 120px;
+      max-width: 120px;
       text-align: center;
     }
 
-    td.mat-cell {
-      padding: 8px 16px;
-      height: 48px;
+    td.mat-mdc-cell {
+      padding: 0 16px !important;
+      vertical-align: middle !important;
+      height: 56px !important;
+      box-sizing: border-box;
     }
 
-    td.mat-cell:first-child {
-      width: 100px;
+    td.mat-mdc-cell:first-child {
+      width: 120px;
+      min-width: 120px;
+      max-width: 120px;
       text-align: center;
+      padding: 0 !important;
+    }
+
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      width: 100%;
     }
 
     .course-name {
@@ -114,6 +135,7 @@ interface Course {
       align-items: center;
       gap: 12px;
       min-width: 0;
+      height: 100%;
     }
 
     .course-name span {
@@ -139,15 +161,55 @@ interface Course {
     }
 
     mat-checkbox {
-      display: inline-flex;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
     }
 
     ::ng-deep .mat-mdc-checkbox {
-      --mdc-checkbox-state-layer-size: 40px;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    ::ng-deep .mat-mdc-checkbox .mdc-checkbox {
+      padding: 0 !important;
+      margin: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    ::ng-deep .mat-mdc-checkbox .mdc-form-field {
+      vertical-align: middle !important;
+      display: flex !important;
+      align-items: center !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    ::ng-deep .mat-mdc-checkbox label {
+      padding: 0 !important;
+      margin: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+    }
+
+    ::ng-deep .mat-mdc-checkbox .mdc-checkbox__background {
+      top: 50% !important;
+      transform: translateY(-50%) !important;
     }
 
     tr.mat-mdc-row {
-      height: 48px;
+      height: 56px !important;
+    }
+
+    tr.mat-mdc-header-row {
+      height: 56px !important;
+    }
+
+    tr.mat-mdc-row td {
+      border-bottom: 1px solid rgba(0,0,0,0.12);
     }
 
     tr.mat-mdc-row:hover {
