@@ -280,14 +280,20 @@ export class EnrollmentDialogComponent implements OnInit {
     if (checked) {
       // Enroll
       this.userService.enrollUserInCourse(this.data.user.id, course.id).subscribe({
-        next: () => {
+        next: (enrollment) => {
           this.snackBar.open(`Enrolled in ${course.name}`, 'Close', { duration: 2000 });
-          this.loadData();
+          // Update local state without full reload
+          const currentEnrollments = this.enrollments();
+          this.enrollments.set([...currentEnrollments, {
+            id: enrollment.id || Date.now(),
+            course_id: course.id,
+            course_name: course.name,
+            enrolled_at: new Date().toISOString()
+          }]);
         },
         error: (error) => {
           console.error('Error enrolling:', error);
           this.snackBar.open(error.error?.detail || 'Failed to enroll', 'Close', { duration: 3000 });
-          this.loadData(); // Reload to reset checkbox
         }
       });
     } else {
@@ -295,12 +301,13 @@ export class EnrollmentDialogComponent implements OnInit {
       this.userService.unenrollUserFromCourse(this.data.user.id, course.id).subscribe({
         next: () => {
           this.snackBar.open(`Unenrolled from ${course.name}`, 'Close', { duration: 2000 });
-          this.loadData();
+          // Update local state without full reload
+          const currentEnrollments = this.enrollments();
+          this.enrollments.set(currentEnrollments.filter(e => e.course_id !== course.id));
         },
         error: (error) => {
           console.error('Error unenrolling:', error);
           this.snackBar.open('Failed to unenroll', 'Close', { duration: 3000 });
-          this.loadData(); // Reload to reset checkbox
         }
       });
     }
