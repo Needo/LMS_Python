@@ -1,7 +1,19 @@
 <div class="client-container">
   <!-- Toolbar with Search -->
   <mat-toolbar color="primary" class="app-toolbar">
-    <span class="logo">LMS</span>
+    <div class="logo">
+      <span class="logo-lms">LMS</span>
+      <span class="logo-full">Learning Management System</span>
+    </div>
+    
+    <!-- User Info Section -->
+    <div class="user-info-section">
+      <mat-icon class="user-icon">person</mat-icon>
+      <div class="user-details">
+        <span class="user-name">{{ currentUser()?.username }}</span>
+        <span class="user-role">{{ currentUser()?.isAdmin ? 'Admin' : 'User' }}</span>
+      </div>
+    </div>
     
     <!-- Search Bar -->
     <div class="search-container">
