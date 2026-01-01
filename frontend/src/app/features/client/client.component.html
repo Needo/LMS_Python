@@ -41,25 +41,27 @@
       <span class="btn-text">Back to Search</span>
     </button>
 
-    <!-- User Info and Menu -->
-    <button mat-icon-button [matMenuTriggerFor]="userMenu">
-      <mat-icon>account_circle</mat-icon>
+    <!-- User Info Label -->
+    <span class="user-label">{{ currentUser()?.username }}</span>
+
+    <!-- Admin/Client View Button -->
+    <button 
+      *ngIf="currentUser()?.isAdmin" 
+      mat-button 
+      (click)="navigateToAdmin()"
+      class="nav-btn">
+      <mat-icon>admin_panel_settings</mat-icon>
+      <span class="btn-text">Admin View</span>
     </button>
-    <mat-menu #userMenu="matMenu">
-      <div class="menu-header" mat-menu-item disabled>
-        <mat-icon>person</mat-icon>
-        <span>{{ currentUser()?.username }}</span>
-      </div>
-      <mat-divider></mat-divider>
-      <button *ngIf="currentUser()?.isAdmin" mat-menu-item (click)="navigateToAdmin()">
-        <mat-icon>admin_panel_settings</mat-icon>
-        <span>Admin Panel</span>
-      </button>
-      <button mat-menu-item (click)="logout()">
-        <mat-icon>logout</mat-icon>
-        <span>Logout</span>
-      </button>
-    </mat-menu>
+
+    <!-- Logout Button -->
+    <button 
+      mat-button 
+      (click)="logout()"
+      class="nav-btn">
+      <mat-icon>logout</mat-icon>
+      <span class="btn-text">Logout</span>
+    </button>
   </mat-toolbar>
 
   <!-- Main Content Area -->

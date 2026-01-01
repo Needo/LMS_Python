@@ -8,8 +8,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatDividerModule } from '@angular/material/divider';
 import { AuthService } from '../../core/services/auth.service';
 import { CategoryService } from '../../core/services/category.service';
 import { CourseService } from '../../core/services/course.service';
@@ -38,8 +36,6 @@ import { debounceTime } from 'rxjs/operators';
     MatProgressSpinnerModule,
     MatFormFieldModule,
     MatInputModule,
-    MatMenuModule,
-    MatDividerModule,
     TreeViewComponent,
     FileViewerComponent,
     FolderViewerComponent,

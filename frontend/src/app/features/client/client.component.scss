@@ -100,13 +100,29 @@
   }
 }
 
-.menu-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: #f5f5f5;
-  font-weight: 500;
+.user-label {
+  color: white;
+  font-size: 14px;
+  margin-right: 16px;
+  padding: 0 8px;
+  
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.nav-btn {
+  color: white;
+  
+  mat-icon {
+    margin-right: 4px;
+  }
+  
+  .btn-text {
+    @media (max-width: 768px) {
+      display: none;
+    }
+  }
 }
 
 .content-area {

@@ -19,6 +19,7 @@ class TreeNode {
   // CRITICAL: children must be Observable for Angular Material tree
   children = new BehaviorSubject<TreeNode[]>([]);
   loading = signal(false);
+  isEmpty = signal(false); // Track if category has no enrolled courses
   
   constructor(
     public id: number,
@@ -175,6 +176,11 @@ export class TreeViewComponent implements OnInit {
         // Filter courses by this category
         const coursesInCategory = enrolledCourses.filter(course => course.categoryId === categoryNode.id);
         
+        // Mark category as empty if no courses
+        if (coursesInCategory.length === 0) {
+          categoryNode.isEmpty.set(true);
+        }
+        
         const childNodes: TreeNode[] = coursesInCategory.map(course => 
           new TreeNode(
             course.id,
@@ -262,8 +268,13 @@ export class TreeViewComponent implements OnInit {
   }
 
   onNodeClick(node: TreeNode): void {
+    // Handle category clicks - show message if empty
+    if (node.type === 'category' && node.isEmpty()) {
+      alert('No enrolled courses in this category');
+      return;
+    }
     // Handle file clicks
-    if (node.type === 'file' && node.fileData) {
+    else if (node.type === 'file' && node.fileData) {
       this.selectedNodeId.set(node.id);
       
       // Update state service
@@ -327,6 +338,11 @@ export class TreeViewComponent implements OnInit {
 
   getNodeClass(node: TreeNode): string {
     const classes: string[] = [];
+    
+    // Add empty category class for red color
+    if (node.type === 'category' && node.isEmpty()) {
+      classes.push('empty-category');
+    }
     
     if (node.type === 'file') {
       classes.push('file-node');

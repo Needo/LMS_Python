@@ -120,3 +120,17 @@ button mat-icon {
 .icon-unknown {
   color: #9ca3af !important; /* Light gray for unknown */
 }
+
+/* Empty category styling */
+.empty-category {
+  color: #ef4444 !important; /* Red color for empty categories */
+}
+
+.empty-category mat-icon {
+  color: #ef4444 !important; /* Red icon for empty categories */
+}
+
+.empty-category .node-label {
+  color: #ef4444 !important; /* Red text for empty categories */
+  font-style: italic;
+}
