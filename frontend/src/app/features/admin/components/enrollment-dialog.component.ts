@@ -70,16 +70,16 @@ interface Course {
   `,
   styles: [`
     mat-dialog-content {
-      min-width: 700px;
-      max-width: 900px;
-      max-height: 600px;
+      min-width: 800px;
+      width: 85vw;
+      max-width: 1200px;
+      max-height: 70vh;
       padding: 20px;
       overflow-y: auto;
     }
 
     .courses-table {
       width: 100%;
-      overflow-x: auto;
     }
 
     .full-width {
@@ -91,23 +91,37 @@ interface Course {
       font-weight: 600;
       color: rgba(0,0,0,0.87);
       background: #f5f5f5;
+      padding: 12px 16px;
+    }
+
+    th.mat-header-cell:first-child {
+      width: 100px;
+      text-align: center;
     }
 
     td.mat-cell {
-      padding: 12px 16px;
+      padding: 8px 16px;
+      height: 48px;
+    }
+
+    td.mat-cell:first-child {
+      width: 100px;
+      text-align: center;
     }
 
     .course-name {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
+      min-width: 0;
     }
 
     .course-name span {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 550px;
+      flex: 1;
+      min-width: 0;
     }
 
     .course-icon {
@@ -125,11 +139,18 @@ interface Course {
     }
 
     mat-checkbox {
-      display: flex;
-      justify-content: center;
+      display: inline-flex;
     }
 
-    tr.mat-row:hover {
+    ::ng-deep .mat-mdc-checkbox {
+      --mdc-checkbox-state-layer-size: 40px;
+    }
+
+    tr.mat-mdc-row {
+      height: 48px;
+    }
+
+    tr.mat-mdc-row:hover {
       background: #f5f5f5;
     }
   `]

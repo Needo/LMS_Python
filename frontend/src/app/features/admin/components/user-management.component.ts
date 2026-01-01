@@ -209,7 +209,13 @@ export class UserManagementComponent implements OnInit {
 
   openEnrollmentDialog(user: User): void {
     const dialogRef = this.dialog.open(EnrollmentDialogComponent, {
-      width: '600px',
+      width: '85vw',
+      maxWidth: '1200px',
+      minWidth: '800px',
+      maxHeight: '90vh',
+      disableClose: false,
+      hasBackdrop: true,
+      panelClass: 'resizable-dialog',
       data: { user }
     });
 
