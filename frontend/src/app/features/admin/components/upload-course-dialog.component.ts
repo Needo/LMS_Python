@@ -9,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CategoryService } from '../../../core/services/category.service';
-import { CourseUploadService } from '../../../core/services/course-upload.service';
+import { CourseUploadService, CourseUploadResponse, UploadProgress } from '../../../core/services/course-upload.service';
 import { Category } from '../../../core/models/category.model';
 
 @Component({
@@ -33,7 +33,7 @@ import { Category } from '../../../core/models/category.model';
         <!-- Category Selection -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Select Category</mat-label>
-          <mat-select [(ngModel)]="selectedCategoryId" required>
+          <mat-select [(ngModel)]="selectedCategoryId" required [disabled]="isUploading()">
             @for (category of categories(); track category.id) {
               <mat-option [value]="category.id">{{ category.name }}</mat-option>
             }
@@ -83,8 +83,17 @@ import { Category } from '../../../core/models/category.model';
         <!-- Upload Progress -->
         @if (isUploading()) {
           <div class="progress-section">
-            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-            <p class="progress-text">{{ uploadStatus() }}</p>
+            <div class="progress-header">
+              <span class="progress-text">{{ uploadStatus() }}</span>
+              <span class="progress-percentage">{{ uploadProgress() }}%</span>
+            </div>
+            <mat-progress-bar 
+              mode="determinate" 
+              [value]="uploadProgress()">
+            </mat-progress-bar>
+            <div class="progress-info">
+              <span class="progress-size">{{ formatBytes(uploadLoaded()) }} / {{ formatBytes(uploadTotal()) }}</span>
+            </div>
           </div>
         }
 
@@ -97,7 +106,8 @@ import { Category } from '../../../core/models/category.model';
               <li>Select a category where the course will be uploaded</li>
               <li>Choose a folder containing your course materials</li>
               <li>The folder and all its subfolders will be uploaded</li>
-              <li>Files will be organized in the selected category</li>
+              <li>Please keep this window open during upload</li>
+              <li>Large uploads may take several minutes</li>
             </ul>
           </div>
         </div>
@@ -177,13 +187,37 @@ import { Category } from '../../../core/models/category.model';
       display: flex;
       flex-direction: column;
       gap: 8px;
+      padding: 16px;
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .progress-text {
-      text-align: center;
       color: #666;
       font-size: 14px;
-      margin: 0;
+      font-weight: 500;
+    }
+
+    .progress-percentage {
+      color: #1976d2;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .progress-size {
+      font-size: 12px;
+      color: #999;
     }
 
     .instructions {
@@ -227,6 +261,9 @@ export class UploadCourseDialogComponent implements OnInit {
   selectedFiles = signal<File[] | null>(null);
   isUploading = signal(false);
   uploadStatus = signal('');
+  uploadProgress = signal(0);
+  uploadLoaded = signal(0);
+  uploadTotal = signal(0);
 
   constructor(
     public dialogRef: MatDialogRef<UploadCourseDialogComponent>,
@@ -275,48 +312,77 @@ export class UploadCourseDialogComponent implements OnInit {
     return !!(this.selectedCategoryId && this.selectedFiles() && !this.isUploading());
   }
 
-  async upload(): Promise<void> {
+  upload(): void {
     if (!this.canUpload()) return;
 
     const files = this.selectedFiles();
     if (!files) return;
 
     this.isUploading.set(true);
-    this.uploadStatus.set('Preparing upload...');
+    this.uploadStatus.set('Refreshing authentication...');
+    this.uploadProgress.set(0);
 
-    try {
-      // Prepare file upload items with relative paths
-      const fileItems = files.map(file => {
-        const relativePath = (file as any).webkitRelativePath || file.name;
-        // Remove the root folder name from the path
-        const pathParts = relativePath.split('/');
-        const relativePathWithoutRoot = pathParts.slice(1).join('/');
-        
-        return {
-          file,
-          relativePath: relativePathWithoutRoot
-        };
-      });
-
-      this.uploadStatus.set(`Uploading ${files.length} files...`);
-
-      // Upload files to server
-      const result = await this.courseUploadService.uploadCourseFolder(
-        this.selectedCategoryId!,
-        this.selectedFolderName()!,
-        fileItems
-      ).toPromise();
-
-      this.snackBar.open(`Successfully uploaded ${files.length} files`, 'Close', { duration: 3000 });
-      this.dialogRef.close(result);
+    // Prepare file upload items with relative paths
+    const fileItems = files.map(file => {
+      const relativePath = (file as any).webkitRelativePath || file.name;
+      // Remove the root folder name from the path
+      const pathParts = relativePath.split('/');
+      const relativePathWithoutRoot = pathParts.slice(1).join('/');
       
-    } catch (error) {
-      console.error('Upload failed:', error);
-      this.snackBar.open('Upload failed. Please try again.', 'Close', { duration: 5000 });
-    } finally {
-      this.isUploading.set(false);
-      this.uploadStatus.set('');
-    }
+      return {
+        file,
+        relativePath: relativePathWithoutRoot
+      };
+    });
+
+    this.courseUploadService.uploadCourseFolder(
+      this.selectedCategoryId!,
+      this.selectedFolderName()!,
+      fileItems
+    ).subscribe({
+      next: (event) => {
+        if ('progress' in event) {
+          // Progress update
+          const progress = event as UploadProgress;
+          this.uploadProgress.set(progress.progress);
+          this.uploadLoaded.set(progress.loaded);
+          this.uploadTotal.set(progress.total);
+          this.uploadStatus.set('Uploading files...');
+        } else {
+          // Upload complete
+          const result = event as CourseUploadResponse;
+          this.isUploading.set(false);
+          this.snackBar.open(
+            `Successfully uploaded ${result.filesUploaded} files! Closing and refreshing...`, 
+            'Close', 
+            { duration: 3000 }
+          );
+          // Close dialog after brief delay to show message
+          setTimeout(() => {
+            this.dialogRef.close(result);
+          }, 500);
+        }
+      },
+      error: (error) => {
+        console.error('Upload failed:', error);
+        this.isUploading.set(false);
+        this.uploadStatus.set('');
+        
+        if (error.status === 401) {
+          this.snackBar.open('Session expired. Please login again.', 'Close', { duration: 5000 });
+        } else {
+          this.snackBar.open('Upload failed. Please try again.', 'Close', { duration: 5000 });
+        }
+      }
+    });
+  }
+
+  formatBytes(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   }
 
   cancel(): void {
