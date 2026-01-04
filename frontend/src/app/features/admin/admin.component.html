@@ -45,6 +45,10 @@
               <mat-icon>save</mat-icon>
               Save Path
             </button>
+            <button mat-raised-button color="accent" (click)="openUploadDialog()">
+              <mat-icon>cloud_upload</mat-icon>
+              Upload Course Folder
+            </button>
             @if (isScanning()) {
               <button mat-raised-button color="accent" disabled>
                 <mat-spinner diameter="20"></mat-spinner>

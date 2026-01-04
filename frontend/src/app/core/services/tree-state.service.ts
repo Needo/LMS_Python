@@ -31,6 +31,10 @@ export class TreeStateService {
   private _needsRefresh = signal(false);
   needsRefresh = this._needsRefresh.asReadonly();
   
+  // Track pending node expansions (for search navigation)
+  private _pendingExpansions = signal<{ categoryId: number; courseId?: number; folderId?: number } | null>(null);
+  pendingExpansions = this._pendingExpansions.asReadonly();
+  
   constructor() {
     // Load from sessionStorage on init
     this.loadFromStorage();
@@ -212,5 +216,29 @@ export class TreeStateService {
     } catch (error) {
       console.error('Failed to load tree state:', error);
     }
+  }
+  
+  /**
+   * Expand path to node (for search navigation)
+   */
+  expandToNode(categoryId: number, courseId?: number, folderId?: number): void {
+    // Set pending expansions
+    this._pendingExpansions.set({ categoryId, courseId, folderId });
+    
+    // Also set expanded state
+    this.setExpanded('category', categoryId, true);
+    if (courseId) {
+      this.setExpanded('course', courseId, true);
+    }
+    if (folderId) {
+      this.setExpanded('folder', folderId, true);
+    }
+  }
+  
+  /**
+   * Clear pending expansions
+   */
+  clearPendingExpansions(): void {
+    this._pendingExpansions.set(null);
   }
 }

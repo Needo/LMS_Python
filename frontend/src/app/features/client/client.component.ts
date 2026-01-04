@@ -205,19 +205,53 @@ export class ClientComponent implements OnInit {
     // Navigate to item in tree view
     this.searchService.navigateToItem(item);
     
-    // If it's a file, load it
-    if (item.type === 'file') {
-      // Use setTimeout to ensure the signal update triggers change detection
+    // Expand tree to show the item
+    if (item.type === 'file' && item.courseId) {
+      // Get course to find category
+      this.courseService.getCourseById(item.courseId).subscribe({
+        next: (course) => {
+          // Expand category and course
+          this.treeState.expandToNode(course.categoryId, course.id);
+          
+          // Load the file
+          setTimeout(() => {
+            this.fileService.getFileById(item.id).subscribe({
+              next: (file) => {
+                this.selectedFile.set(file);
+                // Select the node in tree
+                this.treeState.selectNode({
+                  id: file.id,
+                  type: 'file',
+                  name: file.name
+                });
+              },
+              error: (error) => {
+                console.error('Error loading file:', error);
+              }
+            });
+          }, 500); // Delay to allow tree to expand
+        },
+        error: (error) => {
+          console.error('Error loading course:', error);
+        }
+      });
+    } else if (item.type === 'course' && item.categoryId) {
+      // Expand category
+      this.treeState.expandToNode(item.categoryId, item.id);
+      
+      // Select course node and show root contents
       setTimeout(() => {
-        this.fileService.getFileById(item.id).subscribe({
-          next: (file) => {
-            this.selectedFile.set(file);
-          },
-          error: (error) => {
-            console.error('Error loading file:', error);
-          }
+        this.onFolderSelected({
+          folderId: null,
+          folderName: item.name,
+          courseId: item.id
         });
-      }, 0);
+        this.treeState.selectNode({
+          id: item.id,
+          type: 'course',
+          name: item.name
+        });
+      }, 500);
     }
   }
 

@@ -74,6 +74,15 @@ export class TreeViewComponent implements OnInit {
         this.refreshTree();
       }
     });
+    
+    // Watch for pending expansions (from search navigation)
+    effect(() => {
+      const pending = this.treeState.pendingExpansions();
+      if (pending) {
+        this.expandNodePath(pending.categoryId, pending.courseId, pending.folderId);
+        this.treeState.clearPendingExpansions();
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -444,5 +453,76 @@ export class TreeViewComponent implements OnInit {
     };
     
     return searchInNodes(this.rootNodes.value);
+  }
+  
+  /**
+   * Expand node path programmatically (for search navigation)
+   */
+  private expandNodePath(categoryId: number, courseId?: number, folderId?: number): void {
+    console.log('Expanding path:', { categoryId, courseId, folderId });
+    console.log('Tree state - isLoading:', this.isLoading(), 'rootNodes count:', this.rootNodes.value.length);
+    
+    // Check if tree is loaded
+    if (this.isLoading() || this.rootNodes.value.length === 0) {
+      console.log('Tree not loaded yet, waiting...');
+      // Wait for tree to load
+      setTimeout(() => this.expandNodePath(categoryId, courseId, folderId), 200);
+      return;
+    }
+    
+    console.log('Tree loaded, searching for category:', categoryId);
+    console.log('Available categories:', this.rootNodes.value.map(n => ({ id: n.id, name: n.name })));
+    
+    // Find and expand category
+    const categoryNode = this.findNodeById('category', categoryId);
+    if (categoryNode) {
+      console.log('Found category node:', categoryNode.name);
+      
+      // Check if children are already loaded
+      const childrenLoaded = this.treeState.areChildrenLoaded('category', categoryId);
+      console.log('Category children loaded:', childrenLoaded);
+      
+      if (!childrenLoaded) {
+        // Load children first
+        this.expandNode(categoryNode);
+      }
+      
+      // Wait for category children to load
+      const waitTime = childrenLoaded ? 100 : 800;
+      
+      if (courseId) {
+        setTimeout(() => {
+          const courseNode = this.findNodeById('course', courseId);
+          console.log('Looking for course:', courseId, 'Found:', courseNode?.name);
+          
+          if (courseNode) {
+            console.log('Found course node:', courseNode.name);
+            
+            const courseChildrenLoaded = this.treeState.areChildrenLoaded('course', courseId);
+            console.log('Course children loaded:', courseChildrenLoaded);
+            
+            if (!courseChildrenLoaded) {
+              this.expandNode(courseNode);
+            }
+            
+            // Wait for course to load, then expand folder
+            if (folderId) {
+              const folderWaitTime = courseChildrenLoaded ? 100 : 800;
+              setTimeout(() => {
+                const folderNode = this.findNodeById('folder', folderId);
+                if (folderNode) {
+                  console.log('Found folder node:', folderNode.name);
+                  this.expandNode(folderNode);
+                }
+              }, folderWaitTime);
+            }
+          } else {
+            console.warn('Course node not found after expansion. Children:', categoryNode.children.value.length);
+          }
+        }, waitTime);
+      }
+    } else {
+      console.warn('Category node not found:', categoryId, 'Total categories:', this.rootNodes.value.length);
+    }
   }
 }

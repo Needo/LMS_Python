@@ -21,6 +21,7 @@ import { ConfigService } from '../../core/services/config.service';
 import { TreeStateService } from '../../core/services/tree-state.service';
 import { ScanResult, ScanStatus } from '../../core/models/scan.model';
 import { RestoreConfirmDialogComponent } from './components/restore-confirm-dialog.component';
+import { UploadCourseDialogComponent } from './components/upload-course-dialog.component';
 import { UserManagementComponent } from './components/user-management.component';
 import { FileSizePipe } from '../../shared/pipes/file-size.pipe';
 
@@ -333,6 +334,22 @@ export class AdminComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error checking backup status:', error);
+      }
+    });
+  }
+
+  openUploadDialog(): void {
+    const dialogRef = this.dialog.open(UploadCourseDialogComponent, {
+      width: '600px',
+      maxHeight: '90vh',
+      disableClose: false
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.snackBar.open('Course uploaded successfully!', 'Close', { duration: 3000 });
+        // Trigger a scan to refresh the tree
+        this.scanFolder();
       }
     });
   }
